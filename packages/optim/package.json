@@ -1,0 +1,14 @@
+{
+  "name": "@mua/optim",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "lint-staged": "lint-staged",
+    "test": "vitest",
+    "dev": "tsup src/index.ts --watch --dts --clean "
+  },
+  "dependencies": {
+    "@mua/tensor": "workspace: *",
+    "async-math": "workspace: *"
+  }
+}

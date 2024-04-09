@@ -1,0 +1,11 @@
+{
+  "name": "async-math",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "dev": "tsup src/index.ts --watch --dts --clean"
+  },
+  "devDependencies": {
+    "mathjs": "^12.4.1"
+  }
+}
