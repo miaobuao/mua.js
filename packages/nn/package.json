@@ -4,7 +4,6 @@
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "scripts": {
-    "lint-staged": "lint-staged",
     "test": "vitest",
     "dev": "tsup src/index.ts --watch --dts --clean --format cjs,esm",
     "build": "tsup src/index.ts --dts --clean --format cjs,esm"

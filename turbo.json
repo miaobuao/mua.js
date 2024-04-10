@@ -5,7 +5,6 @@
     "build": {
       "dependsOn": ["^build"]
     },
-    "lint-staged": {},
     "lint": {
       "dependsOn": ["^lint"]
     },

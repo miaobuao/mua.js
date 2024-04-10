@@ -9,7 +9,7 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "lint-staged": "turbo lint-staged",
+    "lint-staged": "lint-staged",
     "test": "turbo test",
     "prepare": "husky"
   },
