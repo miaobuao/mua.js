@@ -1,10 +1,11 @@
 {
   "name": "async-math",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
   "scripts": {
-    "dev": "tsup src/index.ts --watch --dts --clean",
-    "build": "tsup src/index.ts --dts --clean"
+    "dev": "tsup src/index.ts --watch --dts --clean --format cjs,esm",
+    "build": "tsup src/index.ts --dts --clean --format cjs,esm"
   },
   "devDependencies": {
     "mathjs": "^12.4.1"

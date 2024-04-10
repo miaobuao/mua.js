@@ -1,10 +1,10 @@
-import type { MaybePromise } from './helper'
 import type { MathCollection } from 'async-math'
 
-import { Matrix, ones as _ones, transpose as _t, zeros as _zeros, matrix } from 'async-math'
+import { Matrix, ones as _ones, sum as _sum, transpose as _t, zeros as _zeros, matrix } from 'async-math'
 import { isNil, isNumber } from 'lodash-es'
 
 import { TensorValueIsNullError, TensorValueTypeError } from './errors'
+import { Graph, type MaybePromise } from './helper'
 import { getConfig } from './mode'
 import { type OpTrait, add, addScalar, dot, matmul } from './ops'
 import { mulScalar } from './ops/mul-scalar'
@@ -43,21 +43,9 @@ export class Tensor {
     return t
   }
 
-  async backward() {
-    if (!this.op || !this.requiresGrad)
-      return
-
-    const gradients = await this.op.gradient(this.gradient ?? new Tensor([ 1 ]), ...this.inputs)
-    const backwardTasks: Tensor[] = []
-    gradients
-      .forEach((g, idx) => {
-        const input = this.inputs[idx]!
-        if (input.requiresGrad === false)
-          return
-        input.gradient = g
-        backwardTasks.push(input)
-      })
-    return Promise.all(backwardTasks.map(t => t.backward()))
+  async backward(outGrad: Tensor | null = null) {
+    outGrad ??= await onesLike(this)
+    await computeGradient(this, outGrad)
   }
 
   add(t: Tensor | number) {
@@ -138,6 +126,13 @@ export class Tensor {
       return [ 1 ]
     })
   }
+
+  async sum(dim?: number) {
+    const v = await this.raw
+    if (v instanceof Matrix)
+      return dim === undefined ? _sum(v) : _sum(v, dim)
+    throw new Error(`${v} cannot be summed`)
+  }
 }
 
 export function detach(t: MaybePromise<Tensor>) {
@@ -152,6 +147,42 @@ export function ones(...size: number[]) {
   return new Tensor(_ones(size))
 }
 
+export async function onesLike(t: MaybePromise<Tensor>) {
+  t = await t
+  const shape = await t.shape
+  return ones(...shape)
+}
+
 export function zeros(...size: number[]) {
   return new Tensor(_zeros(size))
+}
+
+export async function computeGradient(outNode: Tensor, outGrad: Tensor) {
+  const node2Grad = new WeakMap([ [ outNode, [ outGrad ] ] ])
+  const g = new Graph<Tensor>()
+  const queues: Tensor[] = [ outNode ]
+  while (queues.length) {
+    const node = queues.pop()!
+    node.inputs.forEach((input) => {
+      g.addEdge(node, input)
+      queues.push(input)
+    })
+  }
+  // reverse topological sort
+  for (const node of g.sort()) {
+    const grad = await (node2Grad.get(node)!).map(d => Promise.resolve(d)).reduce(add)
+    node.gradient = grad
+
+    if (!node.op)
+      continue
+
+    const inputGrads = await node.op!.gradient(grad, ...node.inputs)
+
+    for (let i = 0; i < node.inputs.length; ++i) {
+      const input = node.inputs[i]!
+      const grads = node2Grad.get(input) || []
+      grads.push(inputGrads[i]!)
+      node2Grad.set(input, grads)
+    }
+  }
 }

@@ -25,5 +25,5 @@ export class MulScalar extends OpTrait {
 
 export async function mulScalar(a: MaybePromise<Tensor>, b: number) {
   const op = new MulScalar(b)
-  return Tensor.fromOp(op, await Promise.resolve(a))
+  return Tensor.fromOp(op, await a)
 }

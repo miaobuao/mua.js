@@ -1,6 +1,8 @@
 import type { Tensor } from '@mua/tensor'
 
-import { Optimizer } from '.'
+import { add } from '@mua/tensor'
+
+import { Optimizer } from './optimizer'
 
 export class SGD extends Optimizer {
   constructor(
@@ -11,10 +13,10 @@ export class SGD extends Optimizer {
   }
 
   async step() {
-    return Promise.all(this.params.map(async p => p.setRaw(
-      (await p.value).add(
-        await p.gradient!.mul(-this.lr),
-      ).then(d => d.raw),
-    )))
+    return Promise.all(
+      this.params.map(async p => p.setRaw(
+        add(p, p.gradient!.mul(-this.lr)).then(d => d.raw),
+      )),
+    )
   }
 }

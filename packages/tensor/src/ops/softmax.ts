@@ -23,5 +23,5 @@ export class Softmax extends OpTrait {
 
 export async function softmax(a: MaybePromise<Tensor>) {
   const op = new Softmax()
-  return Tensor.fromOp(op, await Promise.resolve(a))
+  return Tensor.fromOp(op, await a)
 }

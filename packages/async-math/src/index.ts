@@ -19,4 +19,5 @@ export {
   ones,
   zeros,
   random,
+  sum,
 } from 'mathjs'

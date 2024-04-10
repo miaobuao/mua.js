@@ -28,5 +28,5 @@ export class AddScalar extends OpTrait {
 
 export async function addScalar(t: MaybePromise<Tensor>, n: number) {
   const op = new AddScalar(n)
-  return Tensor.fromOp(op, await Promise.resolve(t))
+  return Tensor.fromOp(op, await t)
 }

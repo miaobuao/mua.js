@@ -1,6 +1,6 @@
-import { type Tensor, ones } from '@mua/tensor'
+import { type MaybePromise, type Tensor, matmul, ones } from '@mua/tensor'
 
-import { Module } from '.'
+import { Module } from './module'
 
 export class Linear extends Module {
   readonly weight: Tensor
@@ -13,8 +13,7 @@ export class Linear extends Module {
     this.weight = ones(inSize, outSize)
   }
 
-  async forward(x: Tensor, y: Tensor) {
-    const z = await x.mul(y)
-    return z
+  forward(x: MaybePromise<Tensor>) {
+    return matmul(x, this.weight)
   }
 }
