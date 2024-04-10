@@ -1,6 +1,7 @@
 import type { MaybePromise } from './helper'
+import type { MathCollection } from 'async-math'
 
-import { Matrix, transpose as _t, matrix } from 'async-math'
+import { Matrix, ones as _ones, transpose as _t, zeros as _zeros, matrix } from 'async-math'
 import { isNil, isNumber } from 'lodash-es'
 
 import { TensorValueIsNullError, TensorValueTypeError } from './errors'
@@ -17,7 +18,7 @@ export class Tensor {
   private requiresGrad = true
   gradient: Tensor | null = null
 
-  constructor(data?: Matrix | number | null, opts: {
+  constructor(data?: MathCollection | number | null, opts: {
     requiresGrad?: boolean
   } = {}) {
     const { requiresGrad } = opts
@@ -40,6 +41,23 @@ export class Tensor {
       await t.realize()
     }
     return t
+  }
+
+  async backward() {
+    if (!this.op || !this.requiresGrad)
+      return
+
+    const gradients = await this.op.gradient(this.gradient ?? new Tensor([ 1 ]), ...this.inputs)
+    const backwardTasks: Tensor[] = []
+    gradients
+      .forEach((g, idx) => {
+        const input = this.inputs[idx]!
+        if (input.requiresGrad === false)
+          return
+        input.gradient = g
+        backwardTasks.push(input)
+      })
+    return Promise.all(backwardTasks.map(t => t.backward()))
   }
 
   add(t: Tensor | number) {
@@ -122,12 +140,18 @@ export class Tensor {
   }
 }
 
-export class Parameter extends Tensor {}
-
 export function detach(t: MaybePromise<Tensor>) {
   return Promise.resolve(t).then(d => d.detach())
 }
 
 export function transpose(t: MaybePromise<Tensor>) {
   return Promise.resolve(t).then(d => d.T)
+}
+
+export function ones(...size: number[]) {
+  return new Tensor(_ones(size))
+}
+
+export function zeros(...size: number[]) {
+  return new Tensor(_zeros(size))
 }

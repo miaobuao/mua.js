@@ -1,9 +1,12 @@
-import type { Parameter } from '@repo/tensor'
+import type { Tensor } from '@mua/tensor'
 
 import { Optimizer } from '.'
 
 export class SGD extends Optimizer {
-  constructor(params: Parameter[], public lr = 0.01) {
+  constructor(
+    params: Tensor[],
+    public lr = 0.01,
+  ) {
     super(params)
   }
 

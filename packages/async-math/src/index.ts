@@ -16,4 +16,7 @@ export {
   subset,
   map,
   transpose,
+  ones,
+  zeros,
+  random,
 } from 'mathjs'

@@ -73,14 +73,11 @@ importers:
         specifier: ^12.4.1
         version: 12.4.1
 
-  packages/optim:
+  packages/nn:
     dependencies:
-      '@repo/tensor':
+      '@mua/tensor':
         specifier: 'workspace: *'
         version: link:../tensor
-      async-math:
-        specifier: 'workspace: *'
-        version: link:../async-math
 
   packages/tensor:
     dependencies:

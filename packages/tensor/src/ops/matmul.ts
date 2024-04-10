@@ -16,8 +16,6 @@ export class MatMul extends OpTrait {
   }
 
   /**
-   * Compute the gradient of a matrix multiplication
-   *
    * for Z = matmul(X, W),
    *
    * out_grad = dY / dZ
@@ -25,6 +23,12 @@ export class MatMul extends OpTrait {
    * grad X = matmul(out_grad, W.T)
    *
    * grad W = matmul(X.T, out_grad)
+   *
+   *  Parameter  |  size
+   *  -----------|--------
+   *  X          | n x k
+   *  W          | k x m
+   *  out_grad   | n x m
    */
   async gradient(grad: Tensor, ...inputs: [Tensor, Tensor]) {
     const [ lhs, rhs ] = inputs

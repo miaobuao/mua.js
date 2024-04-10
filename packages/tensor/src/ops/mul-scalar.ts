@@ -1,7 +1,7 @@
 import { mulScalar as ms } from 'async-math'
 
 import { OpTrait } from '.'
-import { Tensor } from '..'
+import { Tensor, detach } from '..'
 import { TensorValueIsNullError, TensorValueTypeError } from '../errors'
 
 export class MulScalar extends OpTrait {
@@ -17,7 +17,7 @@ export class MulScalar extends OpTrait {
   }
 
   async gradient(grad: Tensor, ...inputs: [Tensor]): Promise<any> {
-    return grad
+    return [ await detach(grad.mul(this.scalar)) ]
   }
 }
 
