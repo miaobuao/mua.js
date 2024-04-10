@@ -3,6 +3,7 @@ export * from './add-scalar'
 export * from './dot'
 export * from './matmul'
 export * from './mul-scalar'
+export * from './softmax'
 
 export {
   MathCollection,
@@ -12,5 +13,7 @@ export {
   subtract,
   divide,
   exp,
-  map
+  subset,
+  map,
+  transpose,
 } from 'mathjs'

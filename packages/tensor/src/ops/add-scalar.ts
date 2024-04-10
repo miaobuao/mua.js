@@ -17,10 +17,10 @@ export class AddScalar extends OpTrait {
     return _addScalar(v, this.scalar)
   }
 
-  async gradient(grad: Tensor, inputs: Tensor[]): Promise<[Tensor]> {
+  async gradient(grad: Tensor, ...inputs: [Tensor]) {
     if (inputs.length !== 1)
       throw new Error(`addScalar: expected 1 input, got ${inputs.length}`)
-    return [ grad ]
+    return [ await grad.detach() ]
   }
 }
 

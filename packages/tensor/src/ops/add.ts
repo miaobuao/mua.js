@@ -15,13 +15,13 @@ export class Add extends OpTrait {
     return _add(v1, v2)
   }
 
-  async gradient(grad: Tensor, inputs: Tensor[]): Promise<[Tensor, Tensor]> {
+  async gradient(grad: Tensor, ...inputs: [Tensor, Tensor]) {
     if (inputs.length !== 2)
       throw new Error(`add: expected 2 input, got ${inputs.length}`)
-    return [
-      await grad.matmul(inputs[1]!),
-      await grad.matmul(inputs[0]!),
-    ]
+    return Promise.all([
+      grad.detach(),
+      grad.detach(),
+    ])
   }
 }
 

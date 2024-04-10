@@ -1,4 +1,4 @@
-import { matmul as _matmul } from 'async-math'
+import { softmax as _sm } from 'async-math'
 
 import { OpTrait } from '.'
 import { Tensor } from '..'
@@ -6,15 +6,15 @@ import { TensorValueIsNullError, TensorValueTypeError } from '../errors'
 
 export class Softmax extends OpTrait {
   async compute(a: Tensor) {
-    const v1 = await a.raw
-    if (v1 === null)
+    const arr = await a.raw
+    if (arr === null)
       throw new TensorValueIsNullError()
-    if (typeof v1 === 'number')
+    if (typeof arr === 'number')
       throw new TensorValueTypeError()
-    return _matmul(v1, v1)
+    return _sm(arr)
   }
 
-  async gradient(grad: Tensor, inputs: Tensor[]): Promise<any> {
+  async gradient(grad: Tensor, ...inputs: [Tensor]): Promise<any> {
     return grad
   }
 }

@@ -16,7 +16,7 @@ export class MulScalar extends OpTrait {
     return ms(v1, this.scalar)
   }
 
-  async gradient(grad: Tensor, inputs: Tensor[]): Promise<any> {
+  async gradient(grad: Tensor, ...inputs: [Tensor]): Promise<any> {
     return grad
   }
 }

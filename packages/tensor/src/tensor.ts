@@ -1,9 +1,9 @@
 import type { MaybePromise } from './helper'
-import type { MathCollection } from 'async-math'
 
-import { Matrix, matrix } from 'async-math'
+import { Matrix, transpose as _t, matrix } from 'async-math'
 import { isNil, isNumber } from 'lodash-es'
 
+import { TensorValueIsNullError, TensorValueTypeError } from './errors'
 import { getConfig } from './mode'
 import { type OpTrait, add, addScalar, dot, matmul } from './ops'
 import { mulScalar } from './ops/mul-scalar'
@@ -13,11 +13,11 @@ const config = getConfig()
 export class Tensor {
   op: OpTrait | undefined
   inputs: Tensor[] = []
-  private cache: MathCollection | number | null = null
+  private cache: Matrix | number | null = null
   private requiresGrad = true
   gradient: Tensor | null = null
 
-  constructor(data?: MathCollection | number | null, opts: {
+  constructor(data?: Matrix | number | null, opts: {
     requiresGrad?: boolean
   } = {}) {
     const { requiresGrad } = opts
@@ -63,7 +63,7 @@ export class Tensor {
   }
 
   async detach() {
-    return new Tensor(await this.realize(), {
+    return new Tensor(await (await this.realize()).raw, {
       requiresGrad: false,
     })
   }
@@ -76,20 +76,33 @@ export class Tensor {
       if (isNil(data))
         throw new Error('data is null')
       this.cache = data
-      return data
+      return this
     }
-    return this.cache
+    return this
   }
 
   get value() {
     return this.detach()
   }
 
-  get raw() {
-    return this.realize()
+  get raw(): Promise<typeof this.cache> {
+    return this.realize().then(d => d.cache)
   }
 
-  async setRaw(v: MaybePromise<MathCollection>) {
+  get T() {
+    return this.transpose()
+  }
+
+  async transpose() {
+    const value = await this.raw
+    if (value === null)
+      throw new TensorValueIsNullError()
+    if (typeof value === 'number')
+      throw new TensorValueTypeError()
+    return new Tensor(_t(value))
+  }
+
+  async setRaw(v: MaybePromise<typeof this.cache>) {
     this.cache = await Promise.resolve(v)
   }
 
@@ -110,3 +123,11 @@ export class Tensor {
 }
 
 export class Parameter extends Tensor {}
+
+export function detach(t: MaybePromise<Tensor>) {
+  return Promise.resolve(t).then(d => d.detach())
+}
+
+export function transpose(t: MaybePromise<Tensor>) {
+  return Promise.resolve(t).then(d => d.T)
+}
