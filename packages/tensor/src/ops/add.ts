@@ -1,6 +1,8 @@
+import type { MaybePromise } from '../helper'
+
 import { add as _add } from 'async-math'
 
-import { OpTrait } from '.'
+import { OpTrait } from './op-trait'
 import { Tensor } from '..'
 import { TensorValueIsNullError, TensorValueTypeError } from '../errors'
 
@@ -25,7 +27,11 @@ export class Add extends OpTrait {
   }
 }
 
-export function add(a: Tensor, b: Tensor) {
+export async function add(
+  a: MaybePromise<Tensor>,
+  b: MaybePromise<Tensor>,
+) {
   const op = new Add()
-  return Tensor.fromOp(op, a, b)
+  const [ t1, t2 ] = await Promise.all([ a, b ])
+  return Tensor.fromOp(op, t1, t2)
 }

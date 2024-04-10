@@ -1,6 +1,8 @@
+import type { MaybePromise } from '../helper'
+
 import { matmul as _matmul } from 'async-math'
 
-import { OpTrait } from '.'
+import { OpTrait } from './op-trait'
 import { Tensor, detach } from '..'
 import { TensorValueIsNullError, TensorValueTypeError } from '../errors'
 
@@ -39,7 +41,8 @@ export class MatMul extends OpTrait {
   }
 }
 
-export function matmul(a: Tensor, b: Tensor): Promise<Tensor> {
+export async function matmul(a: MaybePromise<Tensor>, b: MaybePromise<Tensor>): Promise<Tensor> {
   const op = new MatMul()
-  return Tensor.fromOp(op, a, b)
+  const [ t1, t2 ] = await Promise.all([ a, b ])
+  return Tensor.fromOp(op, t1, t2)
 }

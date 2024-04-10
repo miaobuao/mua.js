@@ -1,6 +1,8 @@
+import type { MaybePromise } from '../helper'
+
 import { softmax as _sm } from 'async-math'
 
-import { OpTrait } from '.'
+import { OpTrait } from './op-trait'
 import { Tensor } from '..'
 import { TensorValueIsNullError, TensorValueTypeError } from '../errors'
 
@@ -19,7 +21,7 @@ export class Softmax extends OpTrait {
   }
 }
 
-export function softmax(a: Tensor) {
+export async function softmax(a: MaybePromise<Tensor>) {
   const op = new Softmax()
-  return Tensor.fromOp(op, a)
+  return Tensor.fromOp(op, await Promise.resolve(a))
 }

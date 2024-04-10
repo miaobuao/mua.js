@@ -1,7 +1,9 @@
+import type { MaybePromise } from '../helper'
+
 import { addScalar as _addScalar } from 'async-math'
 import { isNumber } from 'lodash-es'
 
-import { OpTrait } from '.'
+import { OpTrait } from './op-trait'
 import { Tensor } from '..'
 import { TensorValueIsNullError, TensorValueTypeError } from '../errors'
 
@@ -24,8 +26,7 @@ export class AddScalar extends OpTrait {
   }
 }
 
-export function addScalar(t: Tensor, n: number) {
+export async function addScalar(t: MaybePromise<Tensor>, n: number) {
   const op = new AddScalar(n)
-
-  return Tensor.fromOp(op, t)
+  return Tensor.fromOp(op, await Promise.resolve(t))
 }
