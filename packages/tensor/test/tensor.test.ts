@@ -1,7 +1,7 @@
 import { assert, describe, it } from 'vitest'
 
 import { isLazyMode, setLazyMode } from '../src'
-import { add, addScalar } from '../src/ops'
+import { add, addScalar, relu } from '../src/ops'
 import { Tensor } from '../src/tensor'
 
 describe('tensor', () => {
@@ -47,5 +47,11 @@ describe('tensor', () => {
     expect(isLazyMode()).toEqual(true)
     setLazyMode(false)
     expect(isLazyMode()).toEqual(false)
+  })
+
+  it.concurrent('relu', async () => {
+    const a = new Tensor([ -1, 1, -1 ])
+    const t3 = await relu(a)
+    assert.deepEqual((await t3.toArray()), [ 0, 1, 0 ])
   })
 })

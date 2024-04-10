@@ -4,7 +4,7 @@ import { mulScalar as ms } from 'async-math'
 
 import { OpTrait } from './op-trait'
 import { Tensor, detach } from '..'
-import { TensorValueIsNullError, TensorValueTypeError } from '../errors'
+import { TensorValueIsNullError } from '../errors'
 
 export class MulScalar extends OpTrait {
   constructor(readonly scalar: number) { super() }
@@ -13,8 +13,6 @@ export class MulScalar extends OpTrait {
     const v1 = await a.raw
     if (v1 === null)
       throw new TensorValueIsNullError()
-    if (typeof v1 === 'number')
-      throw new TensorValueTypeError()
     return ms(v1, this.scalar)
   }
 

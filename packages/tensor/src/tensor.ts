@@ -1,7 +1,7 @@
 import type { MathCollection } from 'async-math'
 
-import { Matrix, ones as _ones, sum as _sum, transpose as _t, zeros as _zeros, matrix } from 'async-math'
-import { isNil, isNumber } from 'lodash-es'
+import { Matrix, ones as _ones, random as _random, sum as _sum, transpose as _t, zeros as _zeros, matrix } from 'async-math'
+import { isNil } from 'lodash-es'
 
 import { TensorValueIsNullError, TensorValueTypeError } from './errors'
 import { Graph, type MaybePromise } from './helper'
@@ -14,18 +14,18 @@ const config = getConfig()
 export class Tensor {
   op: OpTrait | undefined
   inputs: Tensor[] = []
-  private cache: Matrix | number | null = null
+  private cache: Matrix | null = null
   private requiresGrad = true
   gradient: Tensor | null = null
 
-  constructor(data?: MathCollection | number | null, opts: {
+  constructor(data?: MathCollection | null, opts: {
     requiresGrad?: boolean
   } = {}) {
     const { requiresGrad } = opts
     if (!isNil(requiresGrad))
       this.requiresGrad = requiresGrad
 
-    if (data instanceof Matrix || isNumber(data))
+    if (data instanceof Matrix)
       this.cache = data
     else if (!isNil(data))
       this.cache = matrix(data)
@@ -155,6 +155,38 @@ export async function onesLike(t: MaybePromise<Tensor>) {
 
 export function zeros(...size: number[]) {
   return new Tensor(_zeros(size))
+}
+
+export async function zerosLike(t: MaybePromise<Tensor>) {
+  t = await t
+  const shape = await t.shape
+  return zeros(...shape)
+}
+
+export function random(size: number[]): Tensor
+export function random(size: number[], max: number): Tensor
+export function random(size: number[], min: number, max: number): Tensor
+export function random(size, min?: number, max?: number) {
+  if (min === undefined)
+    return new Tensor(_random(size))
+  else if (max === undefined)
+    return new Tensor(_random(size, min))
+  else
+    return new Tensor(_random(size, min, max))
+}
+
+export function randomLike(t: MaybePromise<Tensor>): Promise<Tensor>
+export function randomLike(t: MaybePromise<Tensor>, max: number): Promise<Tensor>
+export function randomLike(t: MaybePromise<Tensor>, min: number, max: number): Promise<Tensor>
+export async function randomLike(t: MaybePromise<Tensor>, min?: number, max?: number) {
+  t = await t
+  const shape = await t.shape
+  if (min === undefined)
+    return random(shape)
+  else if (max === undefined)
+    return random(shape, min)
+  else
+    return random(shape, min, max)
 }
 
 export async function computeGradient(outNode: Tensor, outGrad: Tensor) {

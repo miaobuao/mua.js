@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import { ones, zeros } from '@mua/tensor'
 import { range } from 'lodash-es'
 import { describe, it } from 'vitest'
@@ -12,13 +11,16 @@ describe('optim', () => {
     const sgd = new SGD(linear.parameters(), 1e-3)
     const x = ones(20, 10)
     const y = zeros(20, 30)
-    for (const e of range(20)) {
+    const losses: any[] = []
+    for (const e of range(10)) {
       sgd.resetGrad()
       const z = await linear.forward(x)
       const loss = await l2loss.forward(z, y)
       await loss.backward()
-      console.log(e, await loss.sum())
-      sgd.step()
+      losses.push({ epoch: e, loss: await loss.sum() })
+      await sgd.step()
     }
+    // eslint-disable-next-line no-console
+    console.table(losses)
   })
 })

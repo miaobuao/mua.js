@@ -4,7 +4,7 @@ import { matmul as _matmul } from 'async-math'
 
 import { OpTrait } from './op-trait'
 import { Tensor, detach } from '..'
-import { TensorValueIsNullError, TensorValueTypeError } from '../errors'
+import { TensorValueIsNullError } from '../errors'
 
 export class MatMul extends OpTrait {
   async compute(a: Tensor, b: Tensor) {
@@ -12,8 +12,6 @@ export class MatMul extends OpTrait {
     const v2 = await b.raw
     if (v1 === null || v2 === null)
       throw new TensorValueIsNullError()
-    if (typeof v1 === 'number' || typeof v2 === 'number')
-      throw new TensorValueTypeError()
     return _matmul(v1, v2)
   }
 

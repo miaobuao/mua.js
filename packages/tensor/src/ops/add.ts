@@ -4,7 +4,7 @@ import { add as _add } from 'async-math'
 
 import { OpTrait } from './op-trait'
 import { Tensor } from '..'
-import { TensorValueIsNullError, TensorValueTypeError } from '../errors'
+import { TensorValueIsNullError } from '../errors'
 
 export class Add extends OpTrait {
   async compute(a: Tensor, b: Tensor) {
@@ -12,8 +12,6 @@ export class Add extends OpTrait {
     const v2 = await b.raw
     if (v1 === null || v2 === null)
       throw new TensorValueIsNullError()
-    if (typeof v1 === 'number' || typeof v2 === 'number')
-      throw new TensorValueTypeError()
     return _add(v1, v2)
   }
 

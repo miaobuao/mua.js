@@ -1,11 +1,10 @@
 import type { MaybePromise } from '../helper'
 
 import { addScalar as _addScalar } from 'async-math'
-import { isNumber } from 'lodash-es'
 
 import { OpTrait } from './op-trait'
 import { Tensor } from '..'
-import { TensorValueIsNullError, TensorValueTypeError } from '../errors'
+import { TensorValueIsNullError } from '../errors'
 
 export class AddScalar extends OpTrait {
   constructor(readonly scalar: number) { super() };
@@ -14,8 +13,6 @@ export class AddScalar extends OpTrait {
     const v = await t.raw
     if (v === null)
       throw new TensorValueIsNullError()
-    if (isNumber(v))
-      throw new TensorValueTypeError()
     return _addScalar(v, this.scalar)
   }
 
