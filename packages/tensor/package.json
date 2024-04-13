@@ -1,12 +1,8 @@
 {
   "name": "@mua/tensor",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "main": "src/index.ts",
   "scripts": {
-    "test": "vitest",
-    "dev": "tsup src/index.ts --watch --dts --clean --format cjs,esm",
-    "build": "tsup src/index.ts --dts --clean --format cjs,esm"
+    "test": "vitest"
   },
   "dependencies": {
     "async-math": "workspace: *"

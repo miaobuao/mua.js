@@ -4,6 +4,7 @@ export * from './dot'
 export * from './matmul'
 export * from './mul-scalar'
 export * from './softmax'
+export * from './conv1d'
 
 export {
   MathCollection,

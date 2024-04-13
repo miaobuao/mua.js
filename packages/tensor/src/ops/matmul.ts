@@ -26,9 +26,9 @@ export class MatMul extends OpTrait {
    *
    *  Parameter  |  size
    *  -----------|--------
-   *  X          | n x k
-   *  W          | k x m
-   *  out_grad   | n x m
+   *  X          |  n x k
+   *  W          |  k x m
+   *  out_grad   |  n x m
    */
   async gradient(grad: Tensor, ...inputs: [Tensor, Tensor]) {
     const [ lhs, rhs ] = inputs

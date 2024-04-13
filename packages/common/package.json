@@ -1,0 +1,7 @@
+{
+  "name": "@mua/common",
+  "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest"
+  }
+}

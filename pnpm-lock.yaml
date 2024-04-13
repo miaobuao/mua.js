@@ -67,12 +67,6 @@ importers:
         specifier: ^1.4.0
         version: 1.4.0(@types/node@20.12.2)
 
-  apps/linear:
-    dependencies:
-      muajs:
-        specifier: 'workspace: *'
-        version: link:../muajs
-
   apps/muajs:
     dependencies:
       '@mua/nn':
@@ -84,9 +78,14 @@ importers:
 
   packages/async-math:
     devDependencies:
+      '@mua/common':
+        specifier: 'workspace: *'
+        version: link:../common
       mathjs:
         specifier: ^12.4.1
         version: 12.4.1
+
+  packages/common: {}
 
   packages/nn:
     dependencies:
