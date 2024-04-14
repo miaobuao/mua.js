@@ -1,10 +1,13 @@
-import type { MathCollection, Matrix } from 'mathjs'
+import type { NdArrayNumberCell } from './ndarray'
+import type { Matrix } from 'mathjs'
 
-import { divide, exp, isArray, map, matrix, max, subtract, sum } from 'mathjs'
+import { divide, exp, map, matrix, max, subtract, sum } from 'mathjs'
 
-export async function softmax(a: MathCollection) {
-  if (isArray(a))
-    a = matrix(a)
+import { NdArray } from './ndarray'
+
+export async function softmax(array: NdArray<number> | NdArrayNumberCell) {
+  const value = NdArray.toValue(array)
+  let a = matrix(value as number[])
   if (a.size().length > 1) {
     const c = max(a, 1) as unknown as Matrix
     a = a.map((d, [ idx ]) => exp(subtract(d, c.get([ idx! ]))))

@@ -12,14 +12,14 @@ export class Dot extends OpTrait {
     const v2 = await b.raw
     if (v1 === null || v2 === null)
       throw new TensorValueIsNullError()
-    return _dot(v1, v2)
+    return _dot(v1.value, v2.value)
   }
 
-  async gradient(grad: Tensor, ...inputs: [Tensor, Tensor]) {
-    const [ l, r ] = inputs
+  async gradient(grad: MaybePromise<Tensor>, ...inputs: [MaybePromise<Tensor>, MaybePromise<Tensor>]) {
+    const [ outGrad, l, r ] = await Promise.all([ grad, ...inputs ])
     return Promise.all([
-      detach(grad.dot(r)),
-      detach(grad.dot(l)),
+      detach(outGrad.dot(r)),
+      detach(outGrad.dot(l)),
     ])
   }
 }
@@ -29,6 +29,5 @@ export async function dot(
   b: MaybePromise<Tensor>,
 ): Promise<Tensor> {
   const op = new Dot()
-  const [ t1, t2 ] = await Promise.all([ a, b ])
-  return Tensor.fromOp(op, t1, t2)
+  return Tensor.fromOp(op, a, b)
 }

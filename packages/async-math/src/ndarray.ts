@@ -1,5 +1,5 @@
 import { range, uniq } from 'lodash-es'
-import { size, zeros } from 'mathjs'
+import { reshape, size, zeros } from 'mathjs'
 
 export type NdArrayCell<T> = NdArrayCell<T>[] | T
 export type NdArrayNumberCell = NdArrayCell<number>
@@ -9,6 +9,10 @@ export class NdArray<TValueType = number> {
     public readonly value: NdArrayCell<TValueType>[],
   ) {}
 
+  toArray() {
+    return this.value
+  }
+
   static toValue<T>(t: T): T
   static toValue<T>(t: NdArray<T>): NdArrayCell<T>
   static toValue(t) {
@@ -17,8 +21,23 @@ export class NdArray<TValueType = number> {
     return t
   }
 
-  permute(...order: number[]) {
+  concat(...arrays: NdArrayCell<TValueType>[]) {
+    return new NdArray(this.value.concat(...arrays))
+  }
+
+  permute(order: number[]) {
     return permute(this.value, order)
+  }
+
+  get T() {
+    const order = range(this.shape.length).reverse()
+    return this.permute(order)
+  }
+
+  reshape(size: number[]) {
+    return new NdArray(
+      reshape(this.value as number[], size),
+    )
   }
 
   get shape() {

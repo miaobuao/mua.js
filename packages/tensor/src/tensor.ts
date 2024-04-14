@@ -1,9 +1,9 @@
-import type { MathCollection } from 'async-math'
+import type { NdArrayCell } from 'async-math'
 
-import { Matrix, ones as _ones, random as _random, sum as _sum, transpose as _t, zeros as _zeros, matrix } from 'async-math'
-import { isNil } from 'lodash-es'
+import { NdArray, ones as _ones, random as _random, sum as _sum, zeros as _zeros } from 'async-math'
+import { isNil, range } from 'lodash-es'
 
-import { TensorValueIsNullError, TensorValueTypeError } from './errors'
+import { TensorValueIsNullError } from './errors'
 import { Graph, type MaybePromise } from './helper'
 import { getConfig } from './mode'
 import { type OpTrait, add, addScalar, dot, matmul } from './ops'
@@ -11,30 +11,30 @@ import { mulScalar } from './ops/mul-scalar'
 
 const config = getConfig()
 
-export class Tensor {
+export class Tensor<TDtype = any> {
   op: OpTrait | undefined
-  inputs: Tensor[] = []
-  private cache: Matrix | null = null
+  inputs: Tensor<TDtype>[] = []
+  private cache: NdArray<TDtype> | null = null
   private requiresGrad = true
   gradient: Tensor | null = null
 
-  constructor(data?: MathCollection | null, opts: {
+  constructor(data?: NdArray<TDtype> | NdArrayCell<TDtype>[] | null, opts: {
     requiresGrad?: boolean
   } = {}) {
     const { requiresGrad } = opts
     if (!isNil(requiresGrad))
       this.requiresGrad = requiresGrad
 
-    if (data instanceof Matrix)
+    if (data instanceof NdArray)
       this.cache = data
     else if (!isNil(data))
-      this.cache = matrix(data)
+      this.cache = new NdArray(data)
   }
 
-  static async fromOp(op: OpTrait, ...inputs: Tensor[]) {
+  static async fromOp(op: OpTrait, ...inputs: MaybePromise<Tensor>[]) {
     const t = new Tensor()
     t.op = op
-    t.inputs = inputs
+    t.inputs = await Promise.all (inputs)
     if (!config.LAZY_MODE) {
       if (!config.REQUIRES_GRAD)
         return t.detach()
@@ -100,12 +100,15 @@ export class Tensor {
   }
 
   async transpose() {
-    const value = await this.raw
-    if (value === null)
+    const order = range((await this.shape).length).reverse()
+    return this.permute(order)
+  }
+
+  async permute(order: number[]) {
+    const raw = await this.raw
+    if (!raw)
       throw new TensorValueIsNullError()
-    if (typeof value === 'number')
-      throw new TensorValueTypeError()
-    return new Tensor(_t(value))
+    return new Tensor(await raw.permute(order))
   }
 
   async setRaw(v: MaybePromise<typeof this.cache>) {
@@ -114,23 +117,27 @@ export class Tensor {
 
   async toArray() {
     const v = await this.raw
-    if (v instanceof Matrix)
-      return v.toArray()
+    if (v instanceof NdArray)
+      return v.value
     throw new Error(`${v} cannot be converted to array`)
   }
 
   get shape() {
     return this.raw.then((v) => {
-      if (v instanceof Matrix)
-        return v.size()
+      if (v instanceof NdArray)
+        return v.shape
       return [ 1 ]
     })
   }
 
   async sum(dim?: number) {
     const v = await this.raw
-    if (v instanceof Matrix)
-      return dim === undefined ? _sum(v) : _sum(v, dim)
+    if (v instanceof NdArray) {
+      const data = v.value as number[]
+      return dim === undefined
+        ? _sum(data as number[])
+        : _sum(data as number[], dim)
+    }
     throw new Error(`${v} cannot be summed`)
   }
 }
@@ -144,7 +151,7 @@ export function transpose(t: MaybePromise<Tensor>) {
 }
 
 export function ones(...size: number[]) {
-  return new Tensor(_ones(size))
+  return new Tensor(_ones(size) as number[])
 }
 
 export async function onesLike(t: MaybePromise<Tensor>) {
@@ -154,7 +161,7 @@ export async function onesLike(t: MaybePromise<Tensor>) {
 }
 
 export function zeros(...size: number[]) {
-  return new Tensor(_zeros(size))
+  return new Tensor(_zeros(size) as number[])
 }
 
 export async function zerosLike(t: MaybePromise<Tensor>) {

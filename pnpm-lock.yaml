@@ -95,6 +95,9 @@ importers:
 
   packages/tensor:
     dependencies:
+      '@mua/common':
+        specifier: 'workspace: *'
+        version: link:../common
       async-math:
         specifier: 'workspace: *'
         version: link:../async-math

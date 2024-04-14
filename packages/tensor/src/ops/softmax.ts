@@ -11,15 +11,17 @@ export class Softmax extends OpTrait {
     const arr = await a.raw
     if (arr === null)
       throw new TensorValueIsNullError()
-    return _sm(arr)
+    return _sm(arr.value)
   }
 
-  async gradient(grad: Tensor, ...inputs: [Tensor]) {
-    return [ grad ]
+  async gradient(grad: MaybePromise<Tensor>, ...inputs: [MaybePromise<Tensor>]) {
+    throw new Error('not implemented')
+    const [ outGrad, input ] = await Promise.all([ grad, inputs[0] ])
+    return [ outGrad ]
   }
 }
 
-export async function softmax(a: MaybePromise<Tensor>) {
+export function softmax(a: MaybePromise<Tensor>) {
   const op = new Softmax()
-  return Tensor.fromOp(op, await a)
+  return Tensor.fromOp(op, a)
 }

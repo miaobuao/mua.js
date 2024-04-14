@@ -1,16 +1,11 @@
 export * from './add'
-export * from './add-scalar'
 export * from './dot'
 export * from './matmul'
 export * from './mul-scalar'
 export * from './softmax'
-export * from './conv1d'
+export * from './ndarray'
 
 export {
-  MathCollection,
-  Matrix,
-  matrix,
-  MathType,
   subtract,
   divide,
   exp,
@@ -21,4 +16,5 @@ export {
   zeros,
   random,
   sum,
+  size,
 } from 'mathjs'

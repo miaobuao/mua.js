@@ -12,7 +12,7 @@ export class MatMul extends OpTrait {
     const v2 = await b.raw
     if (v1 === null || v2 === null)
       throw new TensorValueIsNullError()
-    return _matmul(v1, v2)
+    return _matmul(v1.value, v2.value)
   }
 
   /**
@@ -30,17 +30,16 @@ export class MatMul extends OpTrait {
    *  W          |  k x m
    *  out_grad   |  n x m
    */
-  async gradient(grad: Tensor, ...inputs: [Tensor, Tensor]) {
-    const [ lhs, rhs ] = inputs
+  async gradient(grad: MaybePromise<Tensor>, ...inputs: [MaybePromise<Tensor>, MaybePromise<Tensor>]) {
+    const [ outGrad, lhs, rhs ] = await Promise.all([ grad, ...inputs ])
     return Promise.all([
-      rhs.T.then(rT => detach(grad.matmul(rT))),
-      lhs.T.then(lT => detach(lT.matmul(grad))),
+      rhs.T.then(rT => detach(outGrad.matmul(rT))),
+      lhs.T.then(lT => detach(lT.matmul(outGrad))),
     ])
   }
 }
 
 export async function matmul(a: MaybePromise<Tensor>, b: MaybePromise<Tensor>): Promise<Tensor> {
   const op = new MatMul()
-  const [ t1, t2 ] = await Promise.all([ a, b ])
-  return Tensor.fromOp(op, t1, t2)
+  return Tensor.fromOp(op, a, b)
 }

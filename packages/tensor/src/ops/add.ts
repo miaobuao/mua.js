@@ -12,24 +12,24 @@ export class Add extends OpTrait {
     const v2 = await b.raw
     if (v1 === null || v2 === null)
       throw new TensorValueIsNullError()
-    return _add(v1, v2)
+    return _add(v1.value, v2.value)
   }
 
-  async gradient(grad: Tensor, ...inputs: [Tensor, Tensor]) {
+  async gradient(grad: MaybePromise<Tensor>, ...inputs: [MaybePromise<Tensor>, MaybePromise<Tensor>]) {
     if (inputs.length !== 2)
       throw new Error(`add: expected 2 input, got ${inputs.length}`)
+    const outGrad = await grad
     return Promise.all([
-      grad.detach(),
-      grad.detach(),
+      outGrad.detach(),
+      outGrad.detach(),
     ])
   }
 }
 
-export async function add(
+export function add(
   a: MaybePromise<Tensor>,
   b: MaybePromise<Tensor>,
 ) {
   const op = new Add()
-  const [ t1, t2 ] = await Promise.all([ a, b ])
-  return Tensor.fromOp(op, t1, t2)
+  return Tensor.fromOp(op, a, b)
 }
