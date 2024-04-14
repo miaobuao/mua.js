@@ -1,10 +1,10 @@
 /**
  *
- * @param size [n, cin]
- * @param kernelSize [k, cin, cout]
+ * @param size [feat_in, cin]
+ * @param kernelSize [k_size, cin, cout]
  * @param stride
  * @param padding
- * @returns [nout, cout]
+ * @returns [feat_out, cout]
  */
 export function getConv1dSize(size: number[], kernelSize: number[], stride = 1, padding = 0) {
   if (size.length !== 2)

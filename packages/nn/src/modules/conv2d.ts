@@ -1,10 +1,10 @@
 import type { Conv1dOpsParams, MaybePromise, Tensor } from '@mua/tensor'
 
-import { conv1d, randn } from '@mua/tensor'
+import { conv2d, randn } from '@mua/tensor'
 
 import { Module } from './module'
 
-export class Conv1d extends Module {
+export class Conv2d extends Module {
   readonly stride: number
   readonly padding: number
   readonly padValue: number
@@ -15,12 +15,12 @@ export class Conv1d extends Module {
     this.stride = opts?.stride ?? 1
     this.padding = opts?.padding ?? 0
     this.padValue = opts?.padValue ?? 0
-    this.weight = randn([ kernelSize, inChannels, outChannels ])
+    this.weight = randn([ kernelSize, kernelSize, inChannels, outChannels ])
   }
 
   async forward(x: MaybePromise<Tensor>): Promise<Tensor> {
     const input = await x
-    return conv1d(
+    return conv2d(
       input,
       this.weight,
       {

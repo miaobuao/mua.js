@@ -1,6 +1,6 @@
 import type { NdArrayCell } from 'async-math'
 
-import { NdArray, ones as _ones, random as _random, sum as _sum, zeros as _zeros } from 'async-math'
+import { NdArray, ones as _ones, randn as _randn, random as _random, sum as _sum, zeros as _zeros } from 'async-math'
 import { isNil, range } from 'lodash-es'
 
 import { TensorValueIsNullError } from './errors'
@@ -182,6 +182,10 @@ export function random(size, min?: number, max?: number) {
     return new Tensor(_random(size, min, max))
 }
 
+export function randn(size: number[]) {
+  return new Tensor(_randn(size) as number[])
+}
+
 export function randomLike(t: MaybePromise<Tensor>): Promise<Tensor>
 export function randomLike(t: MaybePromise<Tensor>, max: number): Promise<Tensor>
 export function randomLike(t: MaybePromise<Tensor>, min: number, max: number): Promise<Tensor>
@@ -210,7 +214,7 @@ export async function computeGradient(outNode: Tensor, outGrad: Tensor) {
   // reverse topological sort
   for (const node of g.sort()) {
     const grad = await (node2Grad.get(node)!).map(d => Promise.resolve(d)).reduce(add)
-    node.gradient = grad
+    node.gradient = await grad.detach()
 
     if (!node.op)
       continue

@@ -1,7 +1,7 @@
 import { ones } from '@mua/tensor'
 import { describe, it } from 'vitest'
 
-import { Conv1d, Linear } from '../src'
+import { Conv1d, Conv2d, Linear } from '../src'
 
 describe('module', () => {
   it.concurrent('linear', async ({ expect }) => {
@@ -17,5 +17,12 @@ describe('module', () => {
     const x = ones(20, 3)
     const res = await conv1d.forward(x)
     expect(await res.shape).toEqual([ 18, 8 ])
+  })
+
+  it.concurrent('conv2d', async ({ expect }) => {
+    const conv2d = new Conv2d(3, 8, 3)
+    const x = ones(32, 32, 3)
+    const res = await conv2d.forward(x)
+    expect(await res.shape).toEqual([ 30, 30, 8 ])
   })
 })

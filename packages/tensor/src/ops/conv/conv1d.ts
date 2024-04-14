@@ -1,16 +1,20 @@
-import type { ConvOpsParams } from './interface'
-import type { MaybePromise } from '../../helper'
-import type { NdArrayNumberCell } from 'async-math'
+import type { NdArray } from 'async-math'
 
 import { getConv1dSize } from '@mua/common'
-import { NdArray, add, matmul, transpose, zeros } from 'async-math'
-import { filter, map } from 'fp-ts/lib/Array'
+import { Reshape, add, matmul, reshape, transpose, zeros } from 'async-math'
 import { pipe } from 'fp-ts/lib/function'
 import { inRange, range } from 'lodash-es'
 
 import { TensorValueIsNullError } from '../../errors'
+import { type MaybePromise, assert } from '../../helper'
 import { Tensor } from '../../tensor'
 import { OpTrait } from '../op-trait'
+
+export interface Conv1dOpsParams {
+  stride?: number
+  padding?: number
+  padValue?: number
+}
 
 class Conv1d extends OpTrait {
   readonly stride: number
@@ -18,36 +22,32 @@ class Conv1d extends OpTrait {
   readonly padValue: number
   readonly mapping: Map<number, number[]> = new Map()
 
-  /** [k, feat_out, cout] */
-  savedIm2cols: NdArray[] = []
+  /** [k * cin, feat_out] */
+  savedIm2cols: number[][] = []
 
   constructor(
     {
       stride,
       padding,
       padValue,
-    }: ConvOpsParams = {},
+    }: Conv1dOpsParams = {},
   ) {
     super()
     this.padding = padding ?? 0
 
-    if (this.padding < 0)
-      throw new Error(`conv1d: padding must be greater than 0`)
+    assert(this.padding >= 0, `conv1d: padding must be greater or equal than 0, got ${this.padding}`)
 
     this.stride = stride ?? 1
-    if (this.stride <= 0)
-      throw new Error(`conv1d: stride must be greater than 0`)
+    assert(this.stride > 0, `conv1d: stride must be greater than 0, got ${this.stride}`)
 
     this.padValue = padValue ?? 0
   }
 
   /**
    *
-   * @param input [n, cin]
+   * @param input [feat_in, cin]
    * @param weight [k, cin, cout]
-   * @returns [m, cout]
-   *
-   * m = (n + padding * 2 - k)
+   * @returns [feat_out, cout]
    */
   async compute(input: MaybePromise<Tensor>, weight: MaybePromise<Tensor>) {
     this.mapping.clear()
@@ -58,9 +58,9 @@ class Conv1d extends OpTrait {
       throw new TensorValueIsNullError()
 
     const inputSize = inputMatrix.shape
-    const wSize = weightMatrix.shape
+    const wSize = weightMatrix.shape as [number, number, number]
     const convSize = getConv1dSize(inputSize, wSize, this.stride, this.padding)
-    const kernelSize = wSize[0]!
+    const [ kernelSize, cin, cout ] = wSize
 
     let paddedInput = inputMatrix.toArray() as number[][]
     const inputRange: [number, number] = [ this.padding, this.padding + paddedInput.length ]
@@ -73,33 +73,25 @@ class Conv1d extends OpTrait {
       ].flat()
     }
 
-    const weightArr = weightMatrix.toArray() as number[][][]
+    this.savedIm2cols = pipe(
+      range(convSize[0])
+        . map((i) => {
+          const st = i * this.stride
+          const ed = st + kernelSize
+          if (ed >= this.padding && st < inputRange[1])
+            this.mapping.set(i, range(st, ed))
+          return paddedInput.slice(st, ed).flat()
+        }),
+      transpose,
+    )
 
-    this.savedIm2cols = range(convSize[0]).map((i) => {
-      const st = i * this.stride
-      const ed = st + kernelSize
-      if (ed >= this.padding && st < inputRange[1]) {
-        const indices = pipe(
-          range(st, ed),
-          filter(v => inRange(v, ...inputRange)),
-          map(d => d - this.padding),
-        )
-        this.mapping.set(i, indices)
-      }
-      return paddedInput.slice(st, ed)
-    }).reduce(
-      (a, b) => range(kernelSize).map(i => [ ...a[i]!, b[i]! ]),
-      range(kernelSize).map(() => []) as number[][][],
-    ).map(d => new NdArray(d))
-
-    const feats = await Promise.all(this.savedIm2cols.map(
-      (d, i) => matmul(d, weightArr[i]!),
-    ))
-    let res = feats[0]!
-    for (let i = 1; i < feats.length; i++)
-      res = await add(res, feats[i]!)
-
-    return await res
+    const W = pipe(
+      /** [cout, k, cin] */
+      await weightMatrix.permute([ 2, 0, 1 ]),
+      /** [cout, k * cin] */
+      Reshape([ cout, kernelSize * cin ]),
+    ) as NdArray
+    return (await matmul(W, this.savedIm2cols)).T
   }
 
   /**
@@ -121,34 +113,57 @@ class Conv1d extends OpTrait {
     if (!outGrad || !input || !weight)
       throw new TensorValueIsNullError()
 
+    const [ kernelSize, cin, cout ] = weight.shape
+    /** [feat_in, cin] */
     const inputGrad = zeros(input.shape) as number[][]
-    const weightGrad = zeros(weight.shape) as unknown as NdArrayNumberCell[]
 
     // update inputGrad
+    /** [k * cin, cout] */
+    const wT = reshape(weight.value, [ kernelSize! * cin!, cout! ])
+    /** [N, K, cin] */
+    const colGrad = pipe(
+      await matmul(wT, outGrad.T).then(d => d.T),
+      (v) => {
+        /** [N, k * cin] */
+        const grads = v.value as number[][]
+        return grads.map(d => reshape(d, [ kernelSize!, cin! ]) as unknown as number[][])
+      },
+    )
     for (const [ idx, indices ] of this.mapping.entries()) {
-      const effectRow: number[] = outGrad.value[idx] // size: [ cout ]
-      /** size: [k, cin] */
-      const grads = await Promise.all(weight.value.map((k) => {
-        const kT: number[][] = transpose(k) // kT: size: [cout, cin]
-        return matmul([ effectRow ], kT)
-      }))
-      indices.forEach(async (i) => {
-        inputGrad[i] = await add(inputGrad[i]!, grads[0]!).then(d => d.value) as number[]
-      })
+      for (let index = 0; index < indices.length; ++index) {
+        const i = indices[index]! - this.padding
+        if (inRange(i, 0, input.shape[0]!)) {
+          const grad = colGrad[idx]![index]!
+          inputGrad[i] = await add(
+            inputGrad[i]!,
+            grad,
+          ).then(d => d.value) as number[]
+        }
+      }
+      //   /** effectRow size: [ 1, cout ] */
+      //   const effectRow: number[] = reshape(outGrad.value[idx], [ 1, cout! ])
+      //   /** size: [k, cin] */
+      //   const grads = await Promise.all(
+      //     weight.value.map((k) => {
+      //     /** kT: size: [cout, cin] */
+      //       const kT: number[][] = transpose(k)
+      //       return matmul(effectRow, kT).then(d => d.value.flat())
+      //     }),
+      //   )
+
+      //   indices.forEach(async (i) => {
+      //     const added = await add(inputGrad[i]!, grads[0]!).then(d => d.value) as number[]
+
+    //     inputGrad[i] = added
+    //   })
     }
 
     // update weightGrad
-    await Promise.all(this.savedIm2cols.map(async ({ value: col }, i) => {
-      /**
-       * col.shape: [feat_out, cin]
-       * outGrad.shape: [feat_out, cout]
-       * kernel.shape: [cin, cout],
-       *
-       * grad = col.T * outGrad
-       */
-      const grad = await matmul(transpose(col as number[][]) as number[][], outGrad.value)
-      weightGrad[i] = await add(weightGrad[i]!, grad).then(d => d.value)
-    }))
+    /** [k * cin, feat_out] */
+    const weightGrad = pipe(
+      await matmul(this.savedIm2cols, outGrad.value),
+      Reshape([ kernelSize!, cin!, cout! ]),
+    )
 
     return [
       new Tensor(inputGrad),
@@ -157,7 +172,7 @@ class Conv1d extends OpTrait {
   }
 }
 
-export async function conv1d(input: MaybePromise<Tensor>, weight: MaybePromise<Tensor>, opts?: ConvOpsParams) {
+export async function conv1d(input: MaybePromise<Tensor>, weight: MaybePromise<Tensor>, opts?: Conv1dOpsParams) {
   const op = new Conv1d(opts)
   return Tensor.fromOp(op, input, weight)
 }

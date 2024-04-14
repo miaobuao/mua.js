@@ -15,12 +15,16 @@ export class SGD extends Optimizer {
   async step() {
     return Promise.all(
       this.params.map(
-        p => p.setRaw(
-          add(
-            p,
-            p.gradient!.mul(-this.lr),
-          ).then(d => d.raw),
-        ),
+        (p) => {
+          if (!p.gradient)
+            return undefined
+          return p.setRaw(
+            add(
+              p,
+              p.gradient!.mul(-this.lr),
+            ).then(d => d.raw),
+          )
+        },
       ),
     )
   }

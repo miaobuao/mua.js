@@ -1,4 +1,4 @@
-import { type MaybePromise, type Tensor, matmul, ones } from '@mua/tensor'
+import { type MaybePromise, type Tensor, matmul, randn } from '@mua/tensor'
 
 import { Module } from './module'
 
@@ -10,7 +10,7 @@ export class Linear extends Module {
     readonly outSize: number,
   ) {
     super()
-    this.weight = ones(inSize, outSize)
+    this.weight = randn([ inSize, outSize ])
   }
 
   forward(x: MaybePromise<Tensor>) {
