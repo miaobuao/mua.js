@@ -129,7 +129,7 @@ class Conv2d extends OpTrait {
     if (!outGrad || !input || !weight)
       throw new TensorValueIsNullError()
 
-    const [ h, w, cin ] = input.shape
+    const [ _, __, cin ] = input.shape
     const [ kh, kw ] = weight.shape
     const [ hout, wout, cout ] = outGrad.shape
     /** [h, w, cin] */
@@ -174,7 +174,6 @@ class Conv2d extends OpTrait {
 
     return [
       new Tensor(inputGrad),
-      //   new Tensor(weightGrad),
       new Tensor(weightGrad),
     ]
   }

@@ -2,7 +2,7 @@
 
 import type { Tensor } from '@mua/tensor'
 
-import { random } from '@mua/tensor'
+import { flatten, random } from '@mua/tensor'
 import { range } from 'lodash-es'
 import { describe, it } from 'vitest'
 
@@ -80,6 +80,32 @@ describe('optim', () => {
       const loss = await l2loss.forward(z, y)
       await loss.backward()
       losses.push({ epoch: e, loss: await loss.sum(), from: 'conv2d' })
+      await sgd.step()
+    }
+    console.table(losses)
+  })
+
+  it.concurrent('optim mix nn', async () => {
+    class MyModel extends Module {
+      readonly conv = new Conv2d(3, 2, 3, { padding: 1 })
+      readonly clf = new Linear(50, 2)
+      forward(input: Tensor) {
+        const x1 = this.conv.forward(input)
+        const x2 = flatten(x1)
+        return this.clf.forward(x2)
+      }
+    }
+    const model = new MyModel()
+    const sgd = new SGD(model.parameters(), 1e-3)
+    const x = random([ 5, 5, 3 ])
+    const y = random([ 1, 2 ])
+    const losses: any[] = []
+    for (const e of range(5)) {
+      sgd.resetGrad()
+      const z = await model.forward(x)
+      const loss = await l2loss.forward(z, y)
+      await loss.backward()
+      losses.push({ epoch: e, loss: await loss.sum(), from: 'mix' })
       await sgd.step()
     }
     console.table(losses)
