@@ -1,5 +1,5 @@
 import type { NdArrayNumberCell } from './ndarray'
-import type { MaybePromise } from '../../tensor/src'
+import type { MaybePromise } from '@mua/common'
 
 import { multiply as _mul } from 'mathjs'
 

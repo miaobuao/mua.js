@@ -3,8 +3,6 @@ export function assert(condition, msg) {
     throw new Error(`[mua] ${msg}`)
 }
 
-export type MaybePromise<T> = T | Promise<T>
-
 export class Graph<T extends object = any> {
   edges = new WeakMap<T, T[]>()
   indegree = new WeakMap<T, number>()

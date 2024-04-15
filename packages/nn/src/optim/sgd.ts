@@ -16,8 +16,6 @@ export class SGD extends Optimizer {
     return Promise.all(
       this.params.map(
         (p) => {
-          if (!p.gradient)
-            return undefined
           return p.setRaw(
             add(
               p,

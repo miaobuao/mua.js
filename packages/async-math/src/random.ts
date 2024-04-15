@@ -2,8 +2,8 @@ import type { NdArrayNumberCell } from './ndarray'
 
 import { map, zeros } from 'mathjs'
 
-export function randn(size: number[]) {
-  return map(zeros(size as number[]), () => normalRandom(0, 1)) as NdArrayNumberCell[]
+export function normal(size: number[], mean = 0, std = 0.01) {
+  return map(zeros(size as number[]), () => normalRandom(mean, std)) as NdArrayNumberCell[]
 }
 
 function normalRandom(mean: number, std: number) {

@@ -1,3 +1,4 @@
+import type { MaybePromise } from '@mua/common'
 import type { NdArrayNumberCell } from 'async-math'
 
 import { getConv2dSize } from '@mua/common'
@@ -6,7 +7,7 @@ import { pipe } from 'fp-ts/lib/function'
 import { inRange, isNil, range } from 'lodash-es'
 
 import { TensorValueIsNullError } from '../../errors'
-import { type MaybePromise, assert } from '../../helper'
+import { assert } from '../../helper'
 import { Tensor } from '../../tensor'
 import { OpTrait } from '../op-trait'
 

@@ -1,4 +1,4 @@
-import type { MaybePromise } from '../helper'
+import type { MaybePromise } from '@mua/common'
 
 import { dot as _dot } from 'async-math'
 

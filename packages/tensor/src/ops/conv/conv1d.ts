@@ -1,3 +1,4 @@
+import type { MaybePromise } from '@mua/common'
 import type { NdArray } from 'async-math'
 
 import { getConv1dSize } from '@mua/common'
@@ -6,7 +7,7 @@ import { pipe } from 'fp-ts/lib/function'
 import { inRange, range } from 'lodash-es'
 
 import { TensorValueIsNullError } from '../../errors'
-import { type MaybePromise, assert } from '../../helper'
+import { assert } from '../../helper'
 import { Tensor } from '../../tensor'
 import { OpTrait } from '../op-trait'
 
@@ -140,22 +141,6 @@ class Conv1d extends OpTrait {
           ).then(d => d.value) as number[]
         }
       }
-      //   /** effectRow size: [ 1, cout ] */
-      //   const effectRow: number[] = reshape(outGrad.value[idx], [ 1, cout! ])
-      //   /** size: [k, cin] */
-      //   const grads = await Promise.all(
-      //     weight.value.map((k) => {
-      //     /** kT: size: [cout, cin] */
-      //       const kT: number[][] = transpose(k)
-      //       return matmul(effectRow, kT).then(d => d.value.flat())
-      //     }),
-      //   )
-
-      //   indices.forEach(async (i) => {
-      //     const added = await add(inputGrad[i]!, grads[0]!).then(d => d.value) as number[]
-
-    //     inputGrad[i] = added
-    //   })
     }
 
     // update weightGrad

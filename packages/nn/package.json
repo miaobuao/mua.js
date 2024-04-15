@@ -5,6 +5,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@mua/common": "workspace: *",
     "@mua/tensor": "workspace: *"
   }
 }

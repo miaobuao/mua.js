@@ -1,10 +1,11 @@
+import type { MaybePromise } from '@mua/common'
 import type { NdArrayCell } from 'async-math'
 
-import { NdArray, ones as _ones, randn as _randn, random as _random, sum as _sum, zeros as _zeros } from 'async-math'
+import { NdArray, normal as _normal, ones as _ones, random as _random, sum as _sum, zeros as _zeros } from 'async-math'
 import { isNil, range } from 'lodash-es'
 
 import { TensorValueIsNullError } from './errors'
-import { Graph, type MaybePromise } from './helper'
+import { Graph } from './helper'
 import { getConfig } from './mode'
 import { type OpTrait, add, addScalar, dot, matmul } from './ops'
 import { mulScalar } from './ops/mul-scalar'
@@ -15,7 +16,7 @@ export class Tensor<TDtype = any> {
   op: OpTrait | undefined
   inputs: Tensor<TDtype>[] = []
   private cache: NdArray<TDtype> | null = null
-  private requiresGrad = true
+  requiresGrad = true
   gradient: Tensor | null = null
 
   constructor(data?: NdArray<TDtype> | NdArrayCell<TDtype>[] | null, opts: {
@@ -81,7 +82,10 @@ export class Tensor<TDtype = any> {
       const data = await this.op.compute(...this.inputs)
       if (isNil(data))
         throw new Error('data is null')
-      this.cache = data
+      if (data instanceof NdArray)
+        this.cache = data as any
+      else
+        this.cache = new NdArray(data) as any
       return this
     }
     return this
@@ -109,6 +113,16 @@ export class Tensor<TDtype = any> {
     if (!raw)
       throw new TensorValueIsNullError()
     return new Tensor(await raw.permute(order))
+  }
+
+  async reshape(size: number[]) {
+    const raw = await this.raw
+    if (!raw)
+      throw new TensorValueIsNullError()
+    return new Tensor(
+      await raw.reshape(size),
+      { requiresGrad: this.requiresGrad },
+    )
   }
 
   async setRaw(v: MaybePromise<typeof this.cache>) {
@@ -182,8 +196,8 @@ export function random(size, min?: number, max?: number) {
     return new Tensor(_random(size, min, max))
 }
 
-export function randn(size: number[]) {
-  return new Tensor(_randn(size) as number[])
+export function normal(size: number[], mean = 0, std = 0.01) {
+  return new Tensor(_normal(size, mean, std) as number[])
 }
 
 export function randomLike(t: MaybePromise<Tensor>): Promise<Tensor>
@@ -214,7 +228,8 @@ export async function computeGradient(outNode: Tensor, outGrad: Tensor) {
   // reverse topological sort
   for (const node of g.sort()) {
     const grad = await (node2Grad.get(node)!).map(d => Promise.resolve(d)).reduce(add)
-    node.gradient = await grad.detach()
+    if (grad)
+      node.gradient = await grad.detach()
 
     if (!node.op)
       continue

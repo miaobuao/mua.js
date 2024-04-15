@@ -1,0 +1,17 @@
+{
+  "name": "@mua/demo",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "dev": "tsx --watch index.ts"
+  },
+  "dependencies": {
+    "@types/pngjs": "^6.0.4",
+    "canvas": "^2.11.2",
+    "muajs": "workspace: *"
+  },
+  "devDependencies": {
+    "pngjs": "^7.0.0"
+  }
+}

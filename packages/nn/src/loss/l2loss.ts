@@ -1,4 +1,6 @@
-import { type MaybePromise, type Tensor, add, mulScalar } from '@mua/tensor'
+import type { MaybePromise } from '@mua/common'
+
+import { type Tensor, add, mulScalar } from '@mua/tensor'
 
 import { Module } from '../modules'
 

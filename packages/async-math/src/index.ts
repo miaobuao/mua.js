@@ -6,7 +6,8 @@ export * from './softmax'
 export * from './ndarray'
 export * from './function'
 export * from './random'
-
+export * from './log'
+export * from './negative'
 export {
   subtract,
   divide,

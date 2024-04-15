@@ -1,4 +1,4 @@
-import type { MaybePromise } from '../helper'
+import type { MaybePromise } from '@mua/common'
 
 import { OpTrait } from './op-trait'
 import { TensorValueIsNullError } from '../errors'
