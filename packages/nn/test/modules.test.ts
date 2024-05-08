@@ -20,9 +20,9 @@ describe('module', () => {
   })
 
   it.concurrent('conv2d', async ({ expect }) => {
-    const conv2d = new Conv2d(3, 8, 3)
-    const x = ones(new Uint32Array([ 32, 32, 3 ]))
+    const conv2d = new Conv2d(1, 8, 3)
+    const x = ones(new Uint32Array([ 28, 28, 1 ]))
     const res = await conv2d.forward(x)
-    expect(await res.shape).toEqual(new Uint32Array([ 30, 30, 8 ]))
+    expect(await res.shape).toEqual(new Uint32Array([ 26, 26, 8 ]))
   })
 })

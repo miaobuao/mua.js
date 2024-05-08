@@ -1,44 +1,37 @@
+import type { NdArray } from 'ndarray'
+
 import { type MaybePromise, asyncValueNotNil } from '@mua/common'
 import { isNil } from 'lodash-es'
 import { dot } from 'ndarray'
 
 import { OpTrait } from './op-trait'
-import { assert } from '../helper'
 import { Tensor } from '../tensor'
 
 class LogOps extends OpTrait {
-  constructor(readonly base: number | undefined = undefined) { super() }
+  constructor(readonly base: number | undefined = Math.E) { super() }
 
   async compute(x: MaybePromise<Tensor>) {
     const raw = await Promise.resolve(x).then(d => d.raw)
-    assert(!isNil(raw), `log: tensor value is null`)
     return raw!.log(this.base!)
   }
 
   async gradient(grad: MaybePromise<Tensor>, ...inputs: [MaybePromise<Tensor>]): Promise<[Tensor]> {
     const [ outGrad, input ] = await Promise.all([ grad, ...inputs ])
+    let res: NdArray
+    const lhs = await asyncValueNotNil(outGrad.raw)
     if (isNil(this.base) || this.base === Math.E) {
-      return [
-        new Tensor(
-          dot(
-            await asyncValueNotNil(outGrad.raw),
-            await asyncValueNotNil(input.raw).then(d => d.pow(-1)),
-          ),
-        ),
-      ]
+      const rhs = await asyncValueNotNil(input.raw).then(d => d.pow(-1))
+      res = dot(lhs, rhs)
     }
-    const logBase = Math.log(this.base!)
-    return [
-      new Tensor(
-        dot(
-          await asyncValueNotNil(outGrad.raw),
-          await asyncValueNotNil(input.raw).then(d => d.map((d) => {
-            const bottom = logBase * d
-            return bottom === 0 ? 1e2 : 1 / bottom
-          })),
-        ),
-      ),
-    ]
+    else {
+      const logBase = Math.log(this.base!)
+      const rhs = await asyncValueNotNil(input.raw).then(d => d.map((d) => {
+        const bottom = logBase * d
+        return bottom === 0 ? 1e2 : 1 / bottom
+      }))
+      res = dot(lhs, rhs)
+    }
+    return [ new Tensor(res) ]
   }
 }
 

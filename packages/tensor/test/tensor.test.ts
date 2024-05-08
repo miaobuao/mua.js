@@ -54,4 +54,9 @@ describe('tensor', () => {
     const t3 = await relu(a)
     assert.deepEqual((await t3.toArray()), [ 0, 1, 0 ])
   })
+
+  it.concurrent('argmax', async () => {
+    const a = new Tensor([ 1, 4, 2, 3 ])
+    assert.equal(await a.argmax(), 1)
+  })
 })

@@ -21,9 +21,9 @@ describe('conv', () => {
   })
 
   it('conv2d', async ({ expect }) => {
-    const a = random([ 10, 5, 3 ])
-    const k = random([ 3, 3, 3, 16 ])
-    const res1 = await conv2d(a, k)
-    expect(await res1.shape).toEqual(new Uint32Array([ 8, 3, 16 ]))
+    const a = random([ 28, 28, 3 ])
+    const k = random([ 3, 3, 3, 2 ])
+    const res1 = await conv2d(a, k, { stride: 2 })
+    expect(await res1.shape).toEqual(new Uint32Array([ 13, 13, 2 ]))
   })
 })

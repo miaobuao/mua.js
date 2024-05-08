@@ -65,7 +65,6 @@ class Conv2d extends OpTrait {
       throw new TensorValueIsNullError()
     const [ hin, win ] = inputMatrix.shape
     const [ kh, kw, cin, cout ] = weightMatrix.shape
-
     /** paddedInput.size == [hout, wout, cin] */
     // let paddedInput: number[][][] = inputMatrix
     // if (this.padding > 0) {

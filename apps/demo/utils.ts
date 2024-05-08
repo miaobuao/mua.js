@@ -1,7 +1,13 @@
 import { tensor } from 'muajs'
-import { createReadStream, readdirSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
-import { PNG } from 'pngjs'
+
+import { loadImageByLuma } from '../../packages/tensor/src'
+
+export interface DatasetItem {
+  path: string
+  label: number
+}
 
 export function loadDataset(dir: string) {
   const root = path.resolve(dir)
@@ -17,19 +23,10 @@ export function loadDataset(dir: string) {
 
 export function readImage(path: string) {
   return new Promise<tensor.Tensor>((resolve, reject) => {
-    createReadStream(path).pipe(new PNG()).on('parsed', function () {
-      resolve(new tensor.Tensor(Array.from(this.data)).reshape([ 28, 28, 4 ]))
-    })
-    // getPixels(path, (err, pixels) => {
-    //   if (err)
-    //     reject(err)
-    //   else
-    //     resolve(new tensor.Tensor(Array.from(pixels.data)).reshape([ 28, 28, 4 ]))
-    // })
+    const f = readFileSync(path)
+    const t = new tensor.Tensor(
+      loadImageByLuma(f),
+    )
+    resolve(t)
   })
-}
-
-export interface DatasetItem {
-  path: string
-  label: number
 }

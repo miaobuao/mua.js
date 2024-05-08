@@ -143,6 +143,12 @@ export class Tensor {
     })
   }
 
+  get buffer() {
+    return this.raw.then(v =>
+      v?.buffer,
+    )
+  }
+
   async sum() {
     const v = await this.raw
     if (v instanceof NdArray)
@@ -160,6 +166,11 @@ export class Tensor {
   //   }
   //   throw new Error(`${v} cannot be summed`)
   // }
+
+  async argmax() {
+    const value = await this.raw
+    return value?.argmax()
+  }
 }
 
 export function detach(t: MaybePromise<Tensor>) {

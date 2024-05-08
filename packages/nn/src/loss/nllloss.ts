@@ -29,17 +29,19 @@ class NLLLossOps extends OpTrait {
     const [ predRaw, targetRaw ] = await Promise.all([ _pred.raw, _target.raw ])
     if (isNil(predRaw) || isNil(targetRaw))
       throw new TensorValueIsNullError()
-    const predSize = predRaw.shape as [number, number]
-    const targetSize = targetRaw.shape as [number]
+    const predSize = predRaw.shape
+    const targetSize = targetRaw.shape
     if (predSize.length !== 2 || targetSize.length !== 1)
       throw new Error('NLLLoss: pred and target should be 2D and 1D tensors')
     if (predSize[0] !== targetSize[0])
       throw new Error('NLLLoss: pred and target should have the same batch size')
-    const res: number[] = targetRaw.value.map((y, i) => predRaw.value[i][y])
+
+    const res = targetRaw.buffer.map((label, index) => predRaw.slice(new Uint32Array([ index ])).buffer[label]!)
+
     if (this.reduction === 'mean')
-      return new NdArray([ -res.reduce((a, b) => a + b) / res.length ])
+      return NdArray.from(new Float32Array([ -res.reduce((a, b) => a + b) / res.length ]))
     else if (this.reduction === 'sum')
-      return new NdArray([ -res.reduce((a, b) => a + b) ])
+      return NdArray.from(new Float32Array([ -res.reduce((a, b) => a + b) ]))
     else
       throw new Error(`NLLLoss: unknown reduction ${this.reduction}`)
   }
@@ -50,20 +52,29 @@ class NLLLossOps extends OpTrait {
    */
   async gradient(grad: MaybePromise<Tensor>, ...inputs: [MaybePromise<Tensor>, MaybePromise<Tensor>]): Promise<[Tensor]> {
     const [ _grad, _pred, _target ] = await Promise.all([ grad, ...inputs ])
-    const [ gradRaw, predRaw, targetRaw ] = await Promise.all([ _grad.raw, _pred.raw, _target.raw ])
-    if (isNil(gradRaw) || isNil(predRaw) || isNil(targetRaw))
+    const [ outGrad, predRaw, Y ] = await Promise.all([ _grad.raw, _pred.raw, _target.raw ])
+
+    if (isNil(outGrad) || isNil(predRaw) || isNil(Y))
       throw new TensorValueIsNullError()
-    const [ batchSize ] = predRaw.shape as [number, number]
-    const inputGrad = await asyncValueNotNil(zeros(...predRaw.shape).raw)
-    const [ outGrad ] = gradRaw.value
-    const Y = targetRaw.value
+
+    const [ batchSize ] = predRaw.shape
+    const inputGrad = await asyncValueNotNil(zeros(predRaw.shape).raw)
+
     if (this.reduction === 'mean') {
-      for (let i = 0; i < batchSize; ++i)
-        inputGrad.value[i]![Y[i]] = -outGrad / batchSize
+      Y.buffer.forEach((label, index) => {
+        inputGrad.set(
+          new Uint32Array([ index, label ]),
+          outGrad.mulScalar(-1 / batchSize!),
+        )
+      })
     }
     else if (this.reduction === 'sum') {
-      for (let i = 0; i < batchSize; ++i)
-        inputGrad[i][targetRaw.value[i]] = -outGrad
+      Y.buffer.forEach((label, index) => {
+        inputGrad.set(
+          new Uint32Array([ index, label ]),
+          outGrad.mulScalar(-1),
+        )
+      })
     }
     else {
       throw new Error(`NLLLoss: unknown reduction ${this.reduction}`)

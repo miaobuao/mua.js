@@ -1,8 +1,15 @@
 use std::{borrow::Borrow, vec};
-
 use wasm_bindgen::prelude::*;
-
 use crate::{ndarray::NdArray, utils::nd_idx_to_offset};
+
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn error(s: &str);
+}
+
+
 
 #[wasm_bindgen]
 impl NdArray {
@@ -57,8 +64,12 @@ impl NdArray {
         sigmoid(self)
     }
 
-    pub fn softmax(&self) -> NdArray {
-        softmax(self)
+    pub fn tanh(&self) -> NdArray {
+        tanh(self)
+    }
+
+    pub fn softmax(&self, dim: Option<usize>) -> NdArray {
+        softmax(self, dim)
     }
 
     pub fn pow(&self, b: f32) -> NdArray {
@@ -203,29 +214,58 @@ pub fn sigmoid(a: &NdArray) -> NdArray {
 }
 
 #[wasm_bindgen]
-pub fn softmax(a: &NdArray) -> NdArray {
-    if a.shape.len() > 2 {
-        todo!("not implemented for tensor of shape > 2")
-    }
+pub fn tanh(a: &NdArray) -> NdArray {
     let mut res = a.clone();
-    res.buffer.iter_mut().for_each(|x| *x = f32::exp(*x));
-    if a.shape.len() == 1 {
-        let sum: f32 = res.buffer.iter().sum();
-        res.buffer.iter_mut().for_each(|x| *x /= sum);
-    } else {
-        for i in 0..res.shape[1] {
-            let sum: f32 = res
-                .buffer
-                .iter()
-                .skip(i * res.shape[0])
-                .take(res.shape[0])
-                .sum();
-            res.buffer[i * res.shape[0]..(i + 1) * res.shape[0]]
-                .iter_mut()
-                .for_each(|x| *x /= sum);
-        }
+    for i in 0..res.buffer.len() {
+        res.buffer[i] = f32::tanh(res.buffer[i]);
     }
     res
+}
+
+
+#[wasm_bindgen]
+pub fn softmax(a: &NdArray, dim: Option<usize>) -> NdArray {
+    fn softmax_internal(buffer: &mut [f32]) {
+        let sum  = buffer.iter().sum::<f32>();
+        buffer.iter_mut().for_each(|x| *x /= sum);
+    }
+
+    fn softmax_last_dim(buffer: &mut [f32],  chunk_size: usize) {
+       buffer.chunks_mut(chunk_size).for_each(softmax_internal);
+    }
+    
+    let mut res = a.exp();
+    if let Some(dim) = dim {
+        if dim < res.shape.len() -1 {
+            let stride = a.strides[dim];
+            for i in 0..stride {
+                let mut sum = 0.;
+                let mut ofst = i;
+                while ofst < res.buffer.len() {
+                    sum += res.buffer[ofst];
+                    ofst += stride;
+                }
+                ofst = i;
+                while ofst < res.buffer.len() {
+                    res.buffer[ofst] /= sum;
+                    ofst += stride;
+                }
+            }
+            return  res;
+        } else {
+           softmax_last_dim(&mut res.buffer, *res.shape.last().unwrap());
+           return  res;
+        }
+    } else {
+        if a.shape.len() == 1 {
+            softmax_internal(&mut res.buffer);
+            return  res;
+        }else {
+            // default: dim is -1
+            softmax_last_dim(&mut res.buffer, *res.shape.last().unwrap());
+            return res;
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -326,23 +366,24 @@ pub fn im2col(
             //      k: [k, k]
             let mut cnt = 0;
             for i in 0..x.shape[0] / stride {
-                if i + kernel_size[0] > x.shape[0] {
+                let r = i * stride;
+                if r + kernel_size[0] > x.shape[0] {
                     continue;
                 }
                 for j in 0..x.shape[1] / stride {
-                    if j + kernel_size[1] > x.shape[1] {
+                    let c = j * stride;
+                    if c + kernel_size[1] > x.shape[1] {
                         continue;
                     }
-                    dbg!(&i, &j);
+                    println!("r:{}, c:{}", r, c);
                     let mut chunk = Vec::new();
                     for k in 0..kernel_size[0] {
-                        let start_ofst = nd_idx_to_offset(&[i + k, j, 0], &x.strides);
+                        let start_ofst = nd_idx_to_offset(&[r + k, c, 0], &x.strides);
                         let end_ofst =
-                            nd_idx_to_offset(&[i + k, j + kernel_size[1], 0], &x.strides);
+                            nd_idx_to_offset(&[r + k, c + kernel_size[1], 0], &x.strides);
                         if end_ofst > x.buffer.len() {
                             break;
                         }
-                        dbg!(&start_ofst, &end_ofst);
                         let slice = &x.buffer[start_ofst..end_ofst];
                         chunk.extend_from_slice(slice);
                     }
@@ -379,14 +420,16 @@ fn test_matmul() {
 #[test]
 fn test_softmax() {
     let a = NdArray::from(&[1., 2., 3., 4.], Some(vec![4]), None);
-    let b = softmax(&a);
+    let b = softmax(&a, None);
     assert_eq!(
         b.buffer,
         vec![0.032058604, 0.08714432, 0.23688282, 0.6439142]
     );
     let c = a.reshape(&[2, 2]);
-    let d = softmax(&c);
-    assert_eq!(d.buffer, vec![0.2689414, 0.7310586, 0.26894143, 0.7310586]);
+    let d = softmax(&c, Some(0));
+    assert_eq!(d.buffer, vec![0.11920293, 0.11920293, 0.88079715, 0.8807971]);
+    let e = softmax(&c, Some(1));
+    assert_eq!(e.buffer, vec![0.2689414, 0.7310586, 0.26894143, 0.7310586]);
 }
 
 // #[test]
@@ -452,9 +495,10 @@ fn test_im2col() {
     // );
 
     // ---- 2d
-    let img = NdArray::arange(0, 16 * 3, None).reshape(&[4, 4, 3]);
+    let img = NdArray::arange(0, 28 * 28 * 3, None).reshape(&[28,28, 3]);
     let col = im2col(&img, &[3, 3], 1, &[0, 0], None);
-    dbg!(col.buffer);
-    assert_eq!(col.shape, vec![4, 27]);
-    // assert_eq!()
+    assert_eq!(col.shape, vec![26 * 26, 3 * 3 * 3]);
+    
+    let col = im2col(&img, &[3, 3], 2, &[0, 0], None);
+    assert_eq!(col.shape, vec![13 * 13, 3 * 3 * 3]);
 }
