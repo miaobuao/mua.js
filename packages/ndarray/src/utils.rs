@@ -1,4 +1,13 @@
+use image::{load_from_memory, DynamicImage};
 use rand::rngs::ThreadRng;
+use wasm_bindgen::prelude::*;
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = console)]
+    fn error(s: &str);
+}
+
 
 use rand::Rng;
 
@@ -36,14 +45,18 @@ pub fn get_indexes(shape: &Vec<usize>) -> Vec<Vec<usize>> {
 pub struct NormalRandomGenerater {
     mean: f32,
     std: f32,
-    rng:  ThreadRng
+    rng: ThreadRng,
 }
 
 impl NormalRandomGenerater {
     pub fn new(mean: Option<f32>, std: Option<f32>) -> Self {
         let mean = mean.unwrap_or(0.0);
         let std = std.unwrap_or(1.0);
-        NormalRandomGenerater { mean, std, rng: rand::thread_rng() }
+        NormalRandomGenerater {
+            mean,
+            std,
+            rng: rand::thread_rng(),
+        }
     }
 }
 
@@ -96,7 +109,7 @@ pub fn reorder<T: Copy>(origin: &Vec<T>, order: &Vec<usize>) -> Vec<T> {
 
 #[test]
 fn test_reorder_inplace() {
-    let  a = vec![2, 4 ,6];
+    let a = vec![2, 4, 6];
     let b = reorder(&a, &vec![2, 0, 1]);
     assert_eq!(b, [6, 2, 4]);
 }
@@ -113,5 +126,15 @@ pub fn nd_idx_to_offset(index: &[usize], strides: &Vec<usize>) -> usize {
 #[test]
 fn test_nd_idx_to_offset() {
     assert_eq!(nd_idx_to_offset(&vec![1, 5, 1], &vec![3, 2, 3]), 16)
+}
+
+pub fn load_image_from_array_buffer(_array: &[u8]) -> Option<DynamicImage> {
+    match load_from_memory(_array) {
+        Ok(img) => Some(img),
+        Err(err) => {
+            error(err.to_string().as_str());
+            None
+        }
+    }
 }
 

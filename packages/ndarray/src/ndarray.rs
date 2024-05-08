@@ -1,12 +1,10 @@
 use std::{borrow::Borrow, vec};
-
 use crate::utils::{
-    self, get_indexes, get_strides, nd_idx_to_offset, reorder, NormalRandomGenerater,
+    self, get_indexes, get_strides, nd_idx_to_offset, reorder, NormalRandomGenerater
 };
 use wasm_bindgen::prelude::*;
 
 use rand::{thread_rng, Rng};
-use rand_distr::{Distribution, Normal};
 
 #[wasm_bindgen]
 pub struct NdArray {
@@ -203,7 +201,7 @@ impl NdArray {
         )
     }
 
-    pub fn set(&self, indexes: &[usize], value: NdArray) -> NdArray {
+    pub fn set(&mut self, indexes: &[usize], value: NdArray) {
         assert!(indexes.len() <= self.shape.len());
         let remaining = &self.shape[indexes.len()..];
         let offsets: usize = self
@@ -217,11 +215,19 @@ impl NdArray {
             remaining.iter().product::<usize>(),
             value.shape.iter().product()
         );
-        let mut res = self.clone();
-        res.buffer[offsets..offsets + remaining.iter().product::<usize>()]
+        self.buffer[offsets..offsets + remaining.iter().product::<usize>()]
             .clone_from_slice(&value.buffer);
-        return res;
     }
+
+    pub fn argmax(&self) -> usize {
+        self.buffer
+            .iter()
+            .enumerate()
+            .max_by(|(_, a), (_, b)| a.partial_cmp(b).unwrap())
+            .unwrap()
+            .0
+    }
+
 }
 
 impl Clone for NdArray {
@@ -273,16 +279,16 @@ fn test_random() {
 
 #[test]
 fn test_nd_array_slice() {
-    let a = NdArray::arange(0, 12, None).reshape(&[2, 3, 2]);
+    let mut a = NdArray::arange(0, 12, None).reshape(&[2, 3, 2]);
     let c = a.slice(&[1]);
     assert_eq!(c.shape, vec![3, 2]);
     assert_eq!(c.buffer, vec![6.0, 7.0, 8.0, 9.0, 10.0, 11.0]);
 
     let d = NdArray::zeros(&c.shape);
-    let e = a.set(&[0], d);
-    assert_eq!(e.shape, vec![2, 3, 2]);
+    a.set(&[0], d);
+    assert_eq!(a.shape, vec![2, 3, 2]);
     assert_eq!(
-        e.buffer,
+        a.buffer,
         vec![0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0]
     )
 }
