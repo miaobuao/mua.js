@@ -1,12 +1,12 @@
 import type { MaybePromise } from '@mua/common'
 
-import { type Tensor, add, matmul, normal, ones } from '@mua/tensor'
+import { type Tensor, matmul, normal } from '@mua/tensor'
 
 import { Module } from './module'
 
 export class Linear extends Module {
   readonly weight: Tensor
-  readonly bias: Tensor
+  // readonly bias: Tensor
 
   constructor(
     readonly inSize: number,
@@ -14,10 +14,12 @@ export class Linear extends Module {
   ) {
     super()
     this.weight = normal([ inSize, outSize ])
-    this.bias = ones(outSize)
+    // this.bias = ones([ outSize ])
   }
 
-  forward(x: MaybePromise<Tensor>) {
-    return add(matmul(x, this.weight), this.bias)
+  async forward(x: MaybePromise<Tensor>) {
+    x = matmul(x, this.weight)
+    // x = add(x, this.bias)
+    return x
   }
 }

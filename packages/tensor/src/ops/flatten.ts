@@ -12,14 +12,14 @@ class FlattenOps extends OpTrait {
       throw new TensorValueIsNullError()
 
     const shape = v.shape
-    return v.reshape([ 1, shape.reduce((a, b) => a * b) ])
+    return v.reshape(new Int32Array([ 1, shape.reduce((a, b) => a * b) ]))
   }
 
   async gradient(grad: MaybePromise<Tensor>, ...inputs: [MaybePromise<Tensor>]) {
     assert(inputs.length === 1, `flatten: expected 1 input, got ${inputs.length}`)
     const input = await Promise.resolve(inputs[0]).then(d => d.raw)
-    const outGrad = await Promise.resolve(grad).then(d => d.raw)
-    return [ new Tensor(outGrad!.reshape(input!.shape)) ]
+    grad = await grad
+    return [ await grad.reshape(input!.shape) ]
   }
 }
 

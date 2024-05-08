@@ -1,0 +1,8 @@
+{
+  "name": "ndarray-js",
+  "main": "index.ts",
+  "scripts": {
+    "test": "vitest"
+  },
+  "devDependencies": {}
+}

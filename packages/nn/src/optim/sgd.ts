@@ -15,7 +15,7 @@ export class SGD extends Optimizer {
   async step() {
     return Promise.all(
       this.params.map(
-        (p) => {
+        async (p) => {
           return p.setRaw(
             add(
               p,

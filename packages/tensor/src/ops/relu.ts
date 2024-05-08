@@ -1,6 +1,6 @@
 import type { MaybePromise } from '@mua/common'
 
-import { NdArray, dot } from 'async-math'
+import { NdArray } from 'ndarray'
 
 import { OpTrait } from './op-trait'
 import { Tensor, TensorValueTypeError } from '..'
@@ -11,7 +11,7 @@ export class ReLU extends OpTrait {
   async compute(x: Tensor) {
     return x.raw.then((d) => {
       if (d instanceof NdArray)
-        return d.mapElement(v => v > 0 ? v : this.leaky)
+        return d.relu()
       throw new TensorValueTypeError()
     })
   }
@@ -23,7 +23,7 @@ export class ReLU extends OpTrait {
         Promise.resolve(inputs[0]).then(d => d.raw),
       ],
     )
-    const res = await dot(outGrad!.value, input!.mapElement(v => v > 0 ? 1 : 0).value)
+    const res = await outGrad!.dot(input!.map(v => v > 0 ? 1 : 0))
     return [ new Tensor(res) ]
   }
 }

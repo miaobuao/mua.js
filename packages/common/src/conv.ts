@@ -6,7 +6,7 @@
  * @param padding
  * @returns [feat_out, cout]
  */
-export function getConv1dSize(size: number[], kernelSize: number[], stride = 1, padding = 0) {
+export function getConv1dSize(size: ArrayLike<number>, kernelSize: ArrayLike<number>, stride = 1, padding = 0) {
   if (size.length !== 2)
     throw new Error(`conv1d: size must be 2D matrix, got ${size.length}D matrix`)
 
@@ -27,7 +27,7 @@ export function getConv1dSize(size: number[], kernelSize: number[], stride = 1, 
  * @param padding
  * @returns [hout, wout, cout]
  */
-export function getConv2dSize(size: number[], kernelSize: number[], stride = 1, padding = 0) {
+export function getConv2dSize(size: ArrayLike<number>, kernelSize: ArrayLike<number>, stride = 1, padding = 0) {
   if (size.length !== 3)
     throw new Error(`conv2d: size must be 3D matrix, got ${size.length}D matrix`)
 
@@ -36,8 +36,8 @@ export function getConv2dSize(size: number[], kernelSize: number[], stride = 1, 
 
   return [
     ...getConvSize(
-      size.slice(0, 2),
-      kernelSize.slice(0, 2),
+      Array.from(size).slice(0, 2),
+      Array.from(kernelSize).slice(0, 2),
       stride,
       padding,
     ),

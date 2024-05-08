@@ -1,6 +1,6 @@
 import type { Tensor } from '..'
 import type { MaybePromise } from '@mua/common'
-import type { NdArray } from 'async-math'
+import type { NdArray } from 'ndarray'
 
 export abstract class OpTrait<
     TComputeParams extends Array<unknown> = unknown[],

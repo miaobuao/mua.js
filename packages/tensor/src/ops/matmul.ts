@@ -1,7 +1,5 @@
 import type { MaybePromise } from '@mua/common'
 
-import { matmul as _matmul } from 'async-math'
-
 import { OpTrait } from './op-trait'
 import { Tensor, detach } from '..'
 import { TensorValueIsNullError } from '../errors'
@@ -12,7 +10,7 @@ export class MatMul extends OpTrait {
     const v2 = await b.raw
     if (v1 === null || v2 === null)
       throw new TensorValueIsNullError()
-    return _matmul(v1.value, v2.value)
+    return v1.matmul(v2)
   }
 
   /**

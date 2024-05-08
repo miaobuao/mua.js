@@ -4,9 +4,14 @@ import { OpTrait } from './op-trait'
 import { Tensor } from '../tensor'
 
 export class ReshapeOps extends OpTrait {
+  readonly shape: Int32Array
+
   constructor(
-    readonly shape: number[],
-  ) { super() }
+    shape: number[],
+  ) {
+    super()
+    this.shape = new Int32Array(shape)
+  }
 
   async compute(x: Tensor) {
     const raw = await x.raw

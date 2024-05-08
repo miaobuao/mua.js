@@ -1,3 +1,7 @@
+import { flattenDeep } from 'lodash-es'
+import { reshape } from 'mathjs'
+import { NdArray } from 'ndarray'
+
 export function assert(condition, msg) {
   if (!condition)
     throw new Error(`[mua] ${msg}`)
@@ -36,4 +40,24 @@ export class Graph<T extends object = any> {
       }
     }
   }
+}
+
+export function getArrayShape(array: ArrayLike<any>) {
+  const shape: number[] = []
+  while (Array.isArray(array)) {
+    shape.push(array.length)
+    array = array[0]
+  }
+  return shape
+}
+
+export function toNdArray(array: ArrayLike<any>) {
+  const shape = getArrayShape(array)
+  const result = new Float32Array(flattenDeep(array))
+  return NdArray.from(result, new Uint32Array(shape))
+}
+
+export function reshapeArray(array: ArrayLike<any>, shape: ArrayLike<number>) {
+  const result = flattenDeep(array)
+  return reshape(result, Array.from(shape))
 }

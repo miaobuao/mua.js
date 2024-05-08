@@ -1,0 +1,10 @@
+{
+  "name": "ndarray",
+  "main": "./pkg-node/ndarray.js",
+  "types": "./pkg-node/ndarray.d.ts",
+  "browser": "./pkg-browser/ndarray.js",
+  "scripts": {
+    "test": "cargo watch test --package ndarray",
+    "build": "./build.sh"
+  }
+}

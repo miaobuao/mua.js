@@ -6,6 +6,7 @@
   },
   "dependencies": {
     "@mua/common": "workspace: *",
-    "async-math": "workspace: *"
+    "mathjs": "^12.4.1",
+    "ndarray": "workspace: *"
   }
 }

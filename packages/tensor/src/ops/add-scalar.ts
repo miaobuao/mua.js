@@ -1,19 +1,17 @@
 import type { MaybePromise } from '@mua/common'
 
-import { add as _addScalar } from 'async-math'
-
 import { OpTrait } from './op-trait'
 import { Tensor } from '..'
 import { TensorValueIsNullError } from '../errors'
 
-export class AddScalar extends OpTrait {
+export class AddScalarOps extends OpTrait {
   constructor(readonly scalar: number) { super() };
 
   async compute(t: Tensor) {
     const v = await t.raw
     if (v === null)
       throw new TensorValueIsNullError()
-    return _addScalar(v.value, this.scalar)
+    return v.addScalar(this.scalar)
   }
 
   async gradient(grad: MaybePromise<Tensor>, ...inputs: [MaybePromise<Tensor>]) {
@@ -25,6 +23,6 @@ export class AddScalar extends OpTrait {
 }
 
 export function addScalar(t: MaybePromise<Tensor>, n: number) {
-  const op = new AddScalar(n)
+  const op = new AddScalarOps(n)
   return Tensor.fromOp(op, t)
 }

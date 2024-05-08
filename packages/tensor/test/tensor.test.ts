@@ -1,33 +1,33 @@
 import { assert, describe, it } from 'vitest'
 
-import { isLazyMode, setLazyMode } from '../src'
+import { isLazyMode, setLazyMode, toNdArray } from '../src'
 import { add, addScalar, relu } from '../src/ops'
 import { Tensor } from '../src/tensor'
 
 describe('tensor', () => {
-  const t1 = new Tensor([
+  const t1 = new Tensor(toNdArray([
     [ 1, 2, 3 ],
     [ 1, 2, 3 ],
-  ])
-  const t2 = new Tensor([
+  ]))
+  const t2 = new Tensor(toNdArray([
     [ 1, 2, 3, 4 ],
     [ 1, 2, 3, 4 ],
     [ 1, 2, 3, 4 ],
-  ])
+  ]))
   it.concurrent('size', async ({ expect }) => {
-    expect((await t1.shape)).toEqual([ 2, 3 ])
-    expect((await t2.shape)).toEqual([ 3, 4 ])
+    expect((await t1.shape)).toEqual(new Uint32Array([ 2, 3 ]))
+    expect((await t2.shape)).toEqual(new Uint32Array([ 3, 4 ]))
   })
 
   it.concurrent('add', async ({ expect }) => {
     const t3 = await add(t1, t1)
     expect(t3.inputs).toEqual([ t1, t1 ])
-    assert.deepEqual((await t3.toArray()), [ [ 2, 4, 6 ], [ 2, 4, 6 ] ])
+    assert.deepEqual(await t3.toArray(), [ [ 2, 4, 6 ], [ 2, 4, 6 ] ])
   })
 
   it.concurrent('add scalar', async () => {
     const t3 = await addScalar(t1, 1)
-    assert.deepEqual((await t3.toArray()), [ [ 2, 3, 4 ], [ 2, 3, 4 ] ])
+    assert.deepEqual(await t3.toArray(), [ [ 2, 3, 4 ], [ 2, 3, 4 ] ])
   })
 
   it.concurrent('dot', async () => {

@@ -23,5 +23,7 @@
   },
   "include": [
     "packages/*/src",
-    "packages/nn/src/module.ts"]
+    "packages/nn/src/module.ts",
+    "packages/ndarray-js/index.ts"
+  ]
 }
