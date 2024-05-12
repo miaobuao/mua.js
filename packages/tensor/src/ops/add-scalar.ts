@@ -4,7 +4,7 @@ import { OpTrait } from './op-trait'
 import { Tensor } from '..'
 import { TensorValueIsNullError } from '../errors'
 
-export class AddScalarOps extends OpTrait {
+export class AddScalarOp extends OpTrait {
   constructor(readonly scalar: number) { super() };
 
   async compute(t: Tensor) {
@@ -23,6 +23,6 @@ export class AddScalarOps extends OpTrait {
 }
 
 export function addScalar(t: MaybePromise<Tensor>, n: number) {
-  const op = new AddScalarOps(n)
+  const op = new AddScalarOp(n)
   return Tensor.fromOp(op, t)
 }

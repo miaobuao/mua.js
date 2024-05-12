@@ -71,9 +71,12 @@ export class Tensor {
   }
 
   async detach() {
-    return new Tensor(await (await this.realize()).raw, {
-      requiresGrad: false,
-    })
+    return new Tensor(
+      await this.realize().then(d => d.raw),
+      {
+        requiresGrad: false,
+      },
+    )
   }
 
   private async realize() {

@@ -494,6 +494,8 @@ dependencies = [
  "num_enum",
  "rand",
  "rand_distr",
+ "rayon",
+ "rayon-core",
  "serde",
  "serde-wasm-bindgen",
  "wasm-bindgen",

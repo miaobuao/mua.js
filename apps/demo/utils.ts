@@ -2,8 +2,6 @@ import { tensor } from 'muajs'
 import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 
-import { loadImageByLuma } from '../../packages/tensor/src'
-
 export interface DatasetItem {
   path: string
   label: number
@@ -25,7 +23,7 @@ export function readImage(path: string) {
   return new Promise<tensor.Tensor>((resolve, reject) => {
     const f = readFileSync(path)
     const t = new tensor.Tensor(
-      loadImageByLuma(f),
+      tensor.loadImageByLuma(f),
     )
     resolve(t)
   })

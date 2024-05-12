@@ -18,7 +18,7 @@ export class NLLLoss extends Module {
   }
 }
 
-class NLLLossOps extends OpTrait {
+class NLLLossOp extends OpTrait {
   constructor(readonly reduction: 'mean' | 'sum' = 'mean') {
     super()
     assert(reduction === 'mean' || reduction === 'sum', `NLLLoss: reduction should be mean or sum, not ${reduction}`)
@@ -84,6 +84,6 @@ class NLLLossOps extends OpTrait {
 }
 
 export function nllloss(pred: MaybePromise<Tensor>, target: MaybePromise<Tensor>, reduction: 'mean' | 'sum' = 'mean') {
-  const op = new NLLLossOps(reduction)
+  const op = new NLLLossOp(reduction)
   return Tensor.fromOp(op, pred, target)
 }

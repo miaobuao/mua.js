@@ -1,7 +1,7 @@
 import type { MaybePromise } from '@mua/common'
 
 import { OpTrait } from './op-trait'
-import { Tensor, detach } from '..'
+import { Tensor } from '..'
 import { TensorValueIsNullError } from '../errors'
 
 export class Dot extends OpTrait {
@@ -16,8 +16,8 @@ export class Dot extends OpTrait {
   async gradient(grad: MaybePromise<Tensor>, ...inputs: [MaybePromise<Tensor>, MaybePromise<Tensor>]) {
     const [ outGrad, l, r ] = await Promise.all([ grad, ...inputs ])
     return Promise.all([
-      detach(outGrad.dot(r)),
-      detach(outGrad.dot(l)),
+      outGrad.dot(r),
+      outGrad.dot(l),
     ])
   }
 }

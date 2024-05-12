@@ -1,13 +1,13 @@
 /* eslint-disable no-console */
 import type { DatasetItem } from './utils'
 
-import { shuffle } from 'lodash-es'
+import { mean, shuffle } from 'lodash-es'
 import { nn, tensor } from 'muajs'
 import path from 'node:path'
 
 import { loadDataset, readImage } from './utils'
-// import { CrossEntropyLoss } from '../../packages/nn/src'
 
+/** CNN */
 class MyModel extends nn.Module {
   // input: [28, 28, 1]
   readonly conv1 = new nn.Conv2d(1, 32, 5, { stride: 2 }) // output: [12, 12, 32],
@@ -25,43 +25,78 @@ class MyModel extends nn.Module {
   }
 }
 
+/** MLP */
+// class MyModel extends nn.Module {
+//   // input: [28, 28, 1]
+//   readonly linear1 = new nn.Linear(28 * 28, 32)
+//   readonly linear2 = new nn.Linear(32, 10)
+
+//   async forward(x: MaybePromise<tensor.Tensor>) {
+//     x = tensor.flatten(x)
+//     x = this.linear1.forward(x)
+//     x = tensor.tanh(x)
+//     x = this.linear2.forward(x)
+//     return x
+//   }
+// }
+
 async function train(model: MyModel, ds: DatasetItem[]) {
   const optim = new nn.SGD(model.parameters(), 1e-3)
   const loss = new nn.CrossEntropyLoss()
-  const DATASIZE = 2000
-  const sampled = shuffle(ds).slice(0, DATASIZE)
-  console.log('data loaded')
-  const evaluate = shuffle(ds).slice(0, 100)
+  const DATASIZE = 1000
+  // const evaluate = shuffle(ds).slice(0, 100)
   let e = 0
-  while (1) {
-    e++
-    const st = Date.now()
-    const losses: number[] = []
-    for (const { label, path } of sampled) {
-      optim.resetGrad()
-      const data = await readImage(path)
-      const x = await data.detach()
-      const z = model.forward(x)
-      const l = await loss.forward(z, new tensor.Tensor([ label ]))
-      await l.backward()
-      await optim.step()
-      const lossVal = await l.sum()
-      losses.push(lossVal)
-    }
-    const ed = Date.now()
-    console.log(`[${e}] ${(ed - st) / 1000} loss: ${losses.reduce((a, b) => a + b) / DATASIZE}`)
+  const sampled = shuffle(ds).slice(0, DATASIZE)
+  const forwardTime: number[] = []
+  const backwardTime: number[] = []
+  // while (1) {
+  const losses: number[] = []
+  for (const { label, path } of sampled) {
+    e = (e + 1) % 1e4
+    optim.resetGrad()
+    const data = await readImage(path)
+    const x = await data.detach()
+    const y = new tensor.Tensor([ label ], { requiresGrad: false })
 
-    const res = await Promise.all(evaluate.map(async ({ path, label }) => {
-      const x = await readImage(path)
-      const pred = await model.forward(x).then(d => d.raw)
-      return [
-        label,
-        pred?.argmax(),
-      ]
-    }))
-    const acc = res.map(([ a, b ]) => a === b ? 1 : 0).reduce((a, b) => a as any + b) / res.length
-    console.log(`[${e}] evaluate: ${acc}`)
+    let st = Date.now()
+    const z = await model.forward(x)
+    const l = await loss.forward(z, y)
+    let ed = Date.now()
+    forwardTime.push(ed - st)
+
+    st = Date.now()
+    await l.backward()
+    await optim.step()
+    ed = Date.now()
+    backwardTime.push(ed - st)
+
+    const lossVal = await l.sum()
+    losses.push(lossVal)
+    // if (e % 500 === 0) {
+    //   const st = Date.now()
+    //   // evaluate
+    //   const res = await Promise.all(evaluate.map(async ({ path, label }) => {
+    //     const x = await readImage(path)
+    //     x.requiresGrad = false
+    //     const pred = await model.forward(x).then(d => d.raw)
+    //     return [
+    //       label,
+    //       pred?.argmax(),
+    //     ]
+    //   }))
+    //   const acc = res.map(([ a, b ]) => a === b ? 1 : 0).reduce((a, b) => a as any + b) / res.length
+    //   const ed = Date.now()
+    //   console.log(`[${e}] ${(ed - st) / 1000} evaluate: ${acc}`)
+    // }
   }
+  const backMeanTime = mean(backwardTime)
+  const forwardMeanTime = mean(forwardTime)
+  console.log({
+    forwardMeanTime,
+    backMeanTime,
+  })
+
+  // console.log(`[${e}] ${forwardMeanTime} loss: ${losses.reduce((a, b) => a + b) / DATASIZE}`)
 }
 
 const ds = loadDataset(path.join(__dirname, './MNIST'))

@@ -14,7 +14,7 @@ export interface Conv1dOpsParams {
   padValue?: number
 }
 
-class Conv1d extends OpTrait {
+class Conv1dOp extends OpTrait {
   readonly stride: number
   readonly padding: number
   readonly padValue: number
@@ -158,6 +158,6 @@ class Conv1d extends OpTrait {
 }
 
 export async function conv1d(input: MaybePromise<Tensor>, weight: MaybePromise<Tensor>, opts?: Conv1dOpsParams) {
-  const op = new Conv1d(opts)
+  const op = new Conv1dOp(opts)
   return Tensor.fromOp(op, input, weight)
 }
