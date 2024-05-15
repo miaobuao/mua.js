@@ -1,2 +1,6 @@
 [workspace]
-members = [ "packages/ndarray" ]
+members = [
+  "packages/matops",
+  "packages/ndarray",
+  "packages/loader"
+]

@@ -7,6 +7,6 @@
   "dependencies": {
     "@mua/common": "workspace: *",
     "mathjs": "^12.4.1",
-    "ndarray": "workspace: *"
+    "ndarray-js": "workspace: *"
   }
 }

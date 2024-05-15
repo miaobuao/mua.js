@@ -1,14 +1,15 @@
 import type { MaybePromise } from '@mua/common'
+import type { dtype } from 'ndarray-js'
 
 import { isNil, range } from 'lodash-es'
-import { type NdArray, concat } from 'ndarray'
+import { NdArray, concat } from 'ndarray-js'
 
 import { OpTrait } from './op-trait'
-import { Tensor, toNdArray } from '..'
+import { Tensor } from '..'
 import { TensorValueIsNullError } from '../errors'
 
 export class SoftmaxOps extends OpTrait {
-  private ir: NdArray | null = null
+  private ir: NdArray<dtype> | null = null
 
   constructor(
     readonly dim: number = -1,
@@ -20,7 +21,7 @@ export class SoftmaxOps extends OpTrait {
     const arr = await a.raw
     if (arr === null)
       throw new TensorValueIsNullError()
-    const res = arr.softmax()
+    const res = await arr.softmax()
     this.ir = res
     return res
   }
@@ -36,32 +37,30 @@ export class SoftmaxOps extends OpTrait {
     let ir = this.ir
     if (isNil(ir))
       ir = await this.compute(input)
-    if (ir.shape.length === 1)
-      ir = ir.reshape(new Int32Array([ 1, ir!.shape[0]! ]))
+    if (ir!.shape.length === 1)
+      ir = ir!.reshape([ 1, ir!.shape[0]! ])
 
-    let res: NdArray | undefined
+    const res: NdArray[] = []
     const outGradRaw = await outGrad.raw
 
     for (let n = 0; n < gradSize[0]!; ++n) {
-      const jacobian = toNdArray(range(gradSize[1]!).map(i => range(gradSize[1]!).map((j) => {
-        const nj = ir.slice(new Uint32Array([ n, j ])).buffer[0]!
+      const jacobian = new NdArray(range(gradSize[1]!).map(i => range(gradSize[1]!).map((j) => {
+        const nj = ir!.slice(n, j).buffer[0]!
         if (i === j)
           return nj * (1 - nj)
-        const ni = ir.slice(new Uint32Array([ n, i ])).buffer[0]!
+        const ni = ir!.slice(n, i).buffer[0]!
         return -ni * nj
       })))
 
       const cell = outGradRaw?.matmul(jacobian)
 
-      if (res === undefined)
-        res = cell
-      else
-        res = concat(res, cell!)
+      res.push(await cell!)
     }
+    const resRaw = await concat(...res)
 
     return [
       new Tensor(
-        await res!.reshape(new Int32Array(originGradSize)),
+        await resRaw.reshape(originGradSize),
       ),
     ]
   }

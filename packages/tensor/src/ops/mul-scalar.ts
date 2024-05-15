@@ -11,7 +11,7 @@ export class MulScalar extends OpTrait {
     const v1 = await (await a).raw
     if (v1 === null)
       throw new TensorValueIsNullError()
-    return v1.mulScalar(this.scalar)
+    return v1.mul(this.scalar)
   }
 
   async gradient(grad: MaybePromise<Tensor>, ...inputs: [MaybePromise<Tensor>]): Promise<any> {

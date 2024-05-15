@@ -1,4 +1,6 @@
+import { ImageHandle } from '@mua/loader'
 import { tensor } from 'muajs'
+import { NdArray, dtype } from 'ndarray-js'
 import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
 
@@ -22,9 +24,17 @@ export function loadDataset(dir: string) {
 export function readImage(path: string) {
   return new Promise<tensor.Tensor>((resolve, reject) => {
     const f = readFileSync(path)
+    const img = ImageHandle.from(f)
     const t = new tensor.Tensor(
-      tensor.loadImageByLuma(f),
+      new NdArray(
+        img.luma16,
+        {
+          dtype: dtype.float32,
+          shape: [ img.height, img.width, 1 ],
+        },
+      ),
     )
+    img.free()
     resolve(t)
   })
 }

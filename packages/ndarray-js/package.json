@@ -4,5 +4,9 @@
   "scripts": {
     "test": "vitest"
   },
-  "devDependencies": {}
+  "dependencies": {
+    "@mua/matops": "workspace: *",
+    "web-worker": "^1.3.0",
+    "workerpool": "^9.1.1"
+  }
 }

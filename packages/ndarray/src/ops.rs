@@ -343,7 +343,7 @@ pub fn im2col(
     let chunk_size = kernel_size.iter().product::<usize>() * x.shape.last().unwrap();
     match x.shape.len() {
         2 => {
-            // * for conv1d
+            // * for conv1d [N, C]
             let mut cnt = 0;
             let step = stride * x.shape[1];
             // dbg!(&step);

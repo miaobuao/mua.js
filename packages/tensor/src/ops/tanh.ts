@@ -1,5 +1,5 @@
 import type { MaybePromise } from '@mua/common'
-import type { NdArray } from 'ndarray'
+import type { NdArray } from 'ndarray-js'
 
 import { OpTrait } from './op-trait'
 import { Tensor } from '../tensor'
@@ -16,11 +16,10 @@ export class TanhOp extends OpTrait {
 
   async gradient(grad: MaybePromise<Tensor>) {
     const outGrad = await grad
-    const res = this.ir?.pow(2)
-      .mulScalar(-1).addScalar(1).dot(
-        (await outGrad.raw)!,
-      )
-    return [ new Tensor(res) ]
+    const res = (await (await (await this.ir!.pow(2)).mul(-1)).add(1)).mul(
+      (await outGrad.raw)!,
+    )
+    return [ new Tensor(await res) ]
   }
 }
 

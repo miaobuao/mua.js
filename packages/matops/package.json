@@ -1,0 +1,10 @@
+{
+  "name": "@mua/matops",
+  "main": "./pkg-node/matops.js",
+  "types": "./pkg-node/matops.d.ts",
+  "browser": "./pkg-browser/matops.js",
+  "scripts": {
+    "test": "cargo watch test --package matops",
+    "build": "./build.sh"
+  }
+}

@@ -11,7 +11,7 @@ export class AddScalarOp extends OpTrait {
     const v = await t.raw
     if (v === null)
       throw new TensorValueIsNullError()
-    return v.addScalar(this.scalar)
+    return v.add(this.scalar)
   }
 
   async gradient(grad: MaybePromise<Tensor>, ...inputs: [MaybePromise<Tensor>]) {

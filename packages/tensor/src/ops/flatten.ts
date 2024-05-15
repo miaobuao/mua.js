@@ -10,9 +10,8 @@ class FlattenOps extends OpTrait {
     const v = await x.raw
     if (v === null)
       throw new TensorValueIsNullError()
-
     const shape = v.shape
-    return v.reshape(new Int32Array([ 1, shape.reduce((a, b) => a * b) ]))
+    return v.reshape([ 1, shape.reduce((a, b) => a * b) ])
   }
 
   async gradient(grad: MaybePromise<Tensor>, ...inputs: [MaybePromise<Tensor>]) {

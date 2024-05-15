@@ -1,6 +1,6 @@
 import type { MaybePromise } from '@mua/common'
 
-import { NdArray } from 'ndarray'
+import { NdArray } from 'ndarray-js'
 
 import { OpTrait } from './op-trait'
 import { Tensor, TensorValueTypeError } from '..'
@@ -23,7 +23,7 @@ export class ReLU extends OpTrait {
         Promise.resolve(inputs[0]).then(d => d.raw),
       ],
     )
-    const res = await outGrad!.dot(input!.map(v => v > 0 ? 1 : 0))
+    const res = await outGrad!.mul(input!.map(v => v > 0 ? 1 : 0))
     return [ new Tensor(res) ]
   }
 }

@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      consola:
+        specifier: ^3.2.3
+        version: 3.2.3
       fp-ts:
         specifier: ^2.16.4
         version: 2.16.5
@@ -87,9 +90,15 @@ importers:
 
   apps/demo:
     dependencies:
+      '@mua/loader':
+        specifier: 'workspace: *'
+        version: link:../../packages/loader
       muajs:
         specifier: 'workspace: *'
         version: link:../muajs
+      ndarray-js:
+        specifier: 'workspace: *'
+        version: link:../../packages/ndarray-js
 
   apps/muajs:
     dependencies:
@@ -123,9 +132,23 @@ importers:
 
   packages/common: {}
 
+  packages/loader: {}
+
+  packages/matops: {}
+
   packages/ndarray: {}
 
-  packages/ndarray-js: {}
+  packages/ndarray-js:
+    dependencies:
+      '@mua/matops':
+        specifier: 'workspace: *'
+        version: link:../matops
+      web-worker:
+        specifier: ^1.3.0
+        version: 1.3.0
+      workerpool:
+        specifier: ^9.1.1
+        version: 9.1.1
 
   packages/nn:
     dependencies:
@@ -144,9 +167,9 @@ importers:
       mathjs:
         specifier: ^12.4.1
         version: 12.4.1
-      ndarray:
+      ndarray-js:
         specifier: 'workspace: *'
-        version: link:../ndarray
+        version: link:../ndarray-js
 
 packages:
 
@@ -9756,6 +9779,10 @@ packages:
       graceful-fs: 4.2.11
     dev: true
 
+  /web-worker@1.3.0:
+    resolution: {integrity: sha512-BSR9wyRsy/KOValMgd5kMyr3JzpdeoR9KVId8u5GVlTTAtNChlsE4yTxeY7zMdNSyOmoKBv8NH2qeRY9Tg+IaA==}
+    dev: false
+
   /webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
     dev: false
@@ -9863,6 +9890,10 @@ packages:
     resolution: {integrity: sha512-eDMORYaPNZ4sQIuuYPDHdQvf4gyCF9rEEV/yPxGfwPkRodwEgiMUUXTx/dex+Me0wxx53S+NgUHaP7y3MGlDmg==}
     dependencies:
       string-width: 4.2.3
+    dev: false
+
+  /workerpool@9.1.1:
+    resolution: {integrity: sha512-EFoFTSEo9m4V4wNrwzVRjxnf/E/oBpOzcI/R5CIugJhl9RsCiq525rszo4AtqcjQQoqFdu2E3H82AnbtpaQHvg==}
     dev: false
 
   /wrap-ansi@7.0.0:

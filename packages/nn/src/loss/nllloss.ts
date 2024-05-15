@@ -36,12 +36,12 @@ class NLLLossOp extends OpTrait {
     if (predSize[0] !== targetSize[0])
       throw new Error('NLLLoss: pred and target should have the same batch size')
 
-    const res = targetRaw.buffer.map((label, index) => predRaw.slice(new Uint32Array([ index ])).buffer[label]!)
+    const res = targetRaw.buffer.map((label, index) => predRaw.slice(index).buffer[label]!)
 
     if (this.reduction === 'mean')
-      return NdArray.from(new Float32Array([ -res.reduce((a, b) => a + b) / res.length ]))
+      return new NdArray(new Float32Array([ -res.reduce((a, b) => a + b) / res.length ]))
     else if (this.reduction === 'sum')
-      return NdArray.from(new Float32Array([ -res.reduce((a, b) => a + b) ]))
+      return new NdArray(new Float32Array([ -res.reduce((a, b) => a + b) ]))
     else
       throw new Error(`NLLLoss: unknown reduction ${this.reduction}`)
   }
@@ -61,18 +61,18 @@ class NLLLossOp extends OpTrait {
     const inputGrad = await asyncValueNotNil(zeros(predRaw.shape).raw)
 
     if (this.reduction === 'mean') {
-      Y.buffer.forEach((label, index) => {
+      Y.buffer.forEach(async (label, index) => {
         inputGrad.set(
-          new Uint32Array([ index, label ]),
-          outGrad.mulScalar(-1 / batchSize!),
+          [ index, label ],
+          await outGrad.mul(-1 / batchSize!),
         )
       })
     }
     else if (this.reduction === 'sum') {
-      Y.buffer.forEach((label, index) => {
+      Y.buffer.forEach(async (label, index) => {
         inputGrad.set(
-          new Uint32Array([ index, label ]),
-          outGrad.mulScalar(-1),
+          [ index, label ],
+          await outGrad.mul(-1),
         )
       })
     }

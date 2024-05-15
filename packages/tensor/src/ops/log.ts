@@ -1,8 +1,6 @@
-import type { NdArray } from 'ndarray'
-
 import { type MaybePromise, asyncValueNotNil } from '@mua/common'
 import { isNil } from 'lodash-es'
-import { dot } from 'ndarray'
+// import { dot } from 'ndarray-js'
 
 import { OpTrait } from './op-trait'
 import { Tensor } from '../tensor'
@@ -17,11 +15,11 @@ class LogOps extends OpTrait {
 
   async gradient(grad: MaybePromise<Tensor>, ...inputs: [MaybePromise<Tensor>]): Promise<[Tensor]> {
     const [ outGrad, input ] = await Promise.all([ grad, ...inputs ])
-    let res: NdArray
+    let res: any
     const lhs = await asyncValueNotNil(outGrad.raw)
     if (isNil(this.base) || this.base === Math.E) {
       const rhs = await asyncValueNotNil(input.raw).then(d => d.pow(-1))
-      res = dot(lhs, rhs)
+      res = await lhs.mul(rhs)
     }
     else {
       const logBase = Math.log(this.base!)
@@ -29,7 +27,7 @@ class LogOps extends OpTrait {
         const bottom = logBase * d
         return bottom === 0 ? 1e2 : 1 / bottom
       }))
-      res = dot(lhs, rhs)
+      res = lhs.mul(rhs)
     }
     return [ new Tensor(res) ]
   }

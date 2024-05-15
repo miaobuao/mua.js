@@ -1,0 +1,10 @@
+{
+  "name": "@mua/loader",
+  "main": "./pkg-node/loader.js",
+  "types": "./pkg-node/loader.d.ts",
+  "browser": "./pkg-browser/loader.js",
+  "scripts": {
+    "test": "cargo watch test --package loader",
+    "build": "./build.sh"
+  }
+}

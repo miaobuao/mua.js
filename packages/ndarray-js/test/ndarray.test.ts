@@ -48,11 +48,11 @@ describe('ndarray', () => {
 
   it('reshape', async ({ expect }) => {
     const a = new NdArray([ [ 1, 2, 3 ], [ 2, 3, 4 ] ], { dtype: dtype.int32 })
-    const b = a.reshape(-1, 2)
+    const b = a.reshape([ -1, 2 ])
     expect(b.shape).toEqual([ 3, 2 ])
-    const c = a.reshape(1, -1)
+    const c = a.reshape([ 1, -1 ])
     expect(c.shape).toEqual([ 1, 6 ])
-    const d = a.reshape(1, 2, 3)
+    const d = a.reshape([ 1, 2, 3 ])
     expect(d.toArray()).toEqual([ [ [ 1, 2, 3 ], [ 2, 3, 4 ] ] ])
   })
 
@@ -65,9 +65,15 @@ describe('ndarray', () => {
     const b = a.T
     expect(b.shape).toEqual([ 3, 2 ])
     expect(b.toArray()).toEqual([ [ 1, 4 ], [ 2, 5 ], [ 3, 6 ] ])
-    const c = a.reshape(1, -1).T
+    const c = a.reshape([ 1, -1 ]).T
     expect(c.toArray()).toEqual([ [ 1 ], [ 2 ], [ 3 ], [ 4 ], [ 5 ], [ 6 ] ])
-    const d = b.reshape(-1, 1)
+    const d = b.reshape([ -1, 1 ])
     expect(d.toArray()).toEqual([ [ 1 ], [ 4 ], [ 2 ], [ 5 ], [ 3 ], [ 6 ] ])
+  })
+
+  it.concurrent('set', ({ expect }) => {
+    const a = NdArray.zeros([ 3, 4 ])
+    a.set([ 1 ], NdArray.ones([ 2, 4 ]))
+    expect(a.toArray()).toEqual([ [ 0, 0, 0, 0 ], [ 1, 1, 1, 1 ], [ 1, 1, 1, 1 ] ])
   })
 })

@@ -1,22 +1,22 @@
 import { assert, describe, it } from 'vitest'
 
-import { isLazyMode, setLazyMode, toNdArray } from '../src'
+import { isLazyMode, setLazyMode } from '../src'
 import { add, addScalar, relu } from '../src/ops'
 import { Tensor } from '../src/tensor'
 
 describe('tensor', () => {
-  const t1 = new Tensor(toNdArray([
+  const t1 = new Tensor([
     [ 1, 2, 3 ],
     [ 1, 2, 3 ],
-  ]))
-  const t2 = new Tensor(toNdArray([
+  ])
+  const t2 = new Tensor([
     [ 1, 2, 3, 4 ],
     [ 1, 2, 3, 4 ],
     [ 1, 2, 3, 4 ],
-  ]))
+  ])
   it.concurrent('size', async ({ expect }) => {
-    expect((await t1.shape)).toEqual(new Uint32Array([ 2, 3 ]))
-    expect((await t2.shape)).toEqual(new Uint32Array([ 3, 4 ]))
+    expect((await t1.shape)).toEqual([ 2, 3 ])
+    expect((await t2.shape)).toEqual([ 3, 4 ])
   })
 
   it.concurrent('add', async ({ expect }) => {

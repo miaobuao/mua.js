@@ -3,7 +3,7 @@ import type { MaybePromise } from '@mua/common'
 import { getConv2dSize } from '@mua/common'
 import { pipe } from 'fp-ts/lib/function'
 import { inRange, isNil, range } from 'lodash-es'
-import { NdArray, im2col } from 'ndarray'
+import { NdArray, im2col } from 'ndarray-js'
 
 import { TensorValueIsNullError } from '../../errors'
 import { assert } from '../../helper'
@@ -107,9 +107,9 @@ class Conv2d extends OpTrait {
       })
     })
     this.savedIm2cols = im2col(inputMatrix, new Uint32Array([ kh!, kw! ]), this.stride, new Uint32Array([ this.padding, this.padding ]), this.padValue)
-    const flatKernel = weightMatrix.reshape(new Int32Array([ kh! * kw! * cin!, cout! ]))
-    const res = this.savedIm2cols.matmul(flatKernel)
-    return res.reshape(new Int32Array([ hout!, wout!, cout! ]))
+    const flatKernel = weightMatrix.reshape([ kh! * kw! * cin!, cout! ])
+    const res = await this.savedIm2cols!.matmul(flatKernel)
+    return res.reshape([ hout!, wout!, cout! ])
     // const res = await matmul(this.savedIm2cols, flatKernel).then(NdArray.toValue)
     // return new NdArray(reshape(res as number[], [ hout, wout, cout ]) as NdArrayNumberCell[])
   }
@@ -141,7 +141,7 @@ class Conv2d extends OpTrait {
 
     // update inputGrad
     /** [cout, kh * kw * cin] */
-    const deconvKernel = weight.reshape(new Int32Array([ kh! * kw! * cin!, cout! ])).transpose()
+    const deconvKernel = weight.reshape([ kh! * kw! * cin!, cout! ]).T
     for (let h = 0; h < hout!; ++h) {
       const indicesMap = this.mapping[h]
       if (isNil(indicesMap))
@@ -151,18 +151,18 @@ class Conv2d extends OpTrait {
         if (isNil(indices))
           continue
         /** [cout] */
-        const grad = outGrad.slice(new Uint32Array([ h, w ]))
+        const grad = outGrad.slice(h, w)
         /** [1, kh * kw * cin] */
-        const deconved = grad.matmul(deconvKernel)
+        const deconved = await grad.matmul(deconvKernel)
         /** [kh, kw, cin] */
-        const grads = deconved.reshape(new Int32Array([ kh!, kw!, cin! ]))
+        const grads = deconved.reshape([ kh!, kw!, cin! ])
         const offsetY = h * this.stride
         const offsetX = w * this.stride
         for (const [ i, j ] of indices) {
-          const lG = inputGrad.slice(new Uint32Array([ i - this.padding, j - this.padding ]))
+          const lG = inputGrad.slice(i - this.padding, j - this.padding)
           inputGrad.set(
-            new Uint32Array([ i - this.padding, j - this.padding ]),
-            lG.add(grads.slice(new Uint32Array([ i - offsetY, j - offsetX ]))),
+            [ i - this.padding, j - this.padding ],
+            await lG.add(grads.slice(i - offsetY, j - offsetX)),
           )
           // inputGrad[i - this.padding]![j - this.padding] = await add(lG, grads.value[i - offsetY]![j - offsetX]).then(NdArray.toValue)
         }
@@ -171,12 +171,12 @@ class Conv2d extends OpTrait {
 
     // update weightGrad
     /** [kh * kw * cin, hout * wout] */
-    const transposedCol = this.savedIm2cols?.transpose()
+    const transposedCol = this.savedIm2cols!.T
     /** [hout * wout, cout] */
-    const flatGrad = outGrad.flatten().reshape(new Int32Array([ hout! * wout!, cout! ]))
+    const flatGrad = outGrad.flatten().reshape([ hout! * wout!, cout! ])
 
     /** [kh, kw, cin, cout] */
-    const weightGrad = transposedCol?.matmul(flatGrad).reshape(new Int32Array([ kh!, kw!, cin!, cout! ]))
+    const weightGrad = (await transposedCol.matmul(flatGrad)).reshape([ kh!, kw!, cin!, cout! ])
 
     return [
       new Tensor(inputGrad),

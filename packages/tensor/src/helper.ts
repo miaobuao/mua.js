@@ -1,6 +1,5 @@
 import { flattenDeep } from 'lodash-es'
 import { reshape } from 'mathjs'
-import { NdArray } from 'ndarray'
 
 export function assert(condition, msg) {
   if (!condition)
@@ -49,12 +48,6 @@ export function getArrayShape(array: ArrayLike<any>) {
     array = array[0]
   }
   return shape
-}
-
-export function toNdArray(array: ArrayLike<any>) {
-  const shape = getArrayShape(array)
-  const result = new Float32Array(flattenDeep(array))
-  return NdArray.from(result, new Uint32Array(shape))
 }
 
 export function reshapeArray(array: ArrayLike<any>, shape: ArrayLike<number>) {

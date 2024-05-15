@@ -1,36 +1,40 @@
 import type { MaybePromise } from '@mua/common'
 
 import { isNil, range } from 'lodash-es'
-import { NdArray } from 'ndarray'
+import { NdArray, dtype } from 'ndarray-js'
 
 import { TensorValueIsNullError } from './errors'
-import { Graph, reshapeArray, toNdArray } from './helper'
+import { Graph, reshapeArray } from './helper'
 import { getConfig } from './mode'
 import { type OpTrait, add, addScalar, dot, matmul } from './ops'
 import { mulScalar } from './ops/mul-scalar'
 
+type Many<T> = T | Many<T>[]
 const config = getConfig()
 
-export class Tensor {
+export class Tensor<Type extends dtype = dtype> {
   op: OpTrait | undefined
   inputs: Tensor[] = []
-  private cache: NdArray | null = null
+  private cache: NdArray<Type> | null = null
   requiresGrad = true
   gradient: Tensor | null = null
+  readonly dtype: Type
 
   constructor(
-    data?: NdArray | null | number[],
+    data?: NdArray<Type> | null | ArrayLike<Many<number>>,
     opts: {
       requiresGrad?: boolean
+      dtype?: Type
     } = {},
   ) {
-    const { requiresGrad } = opts
+    const { requiresGrad, dtype: _dtype } = opts
+    this.dtype = _dtype || dtype.float32 as Type
     if (!isNil(requiresGrad))
       this.requiresGrad = requiresGrad
     if (data instanceof NdArray)
       this.cache = data
     else if (!isNil(data))
-      this.cache = toNdArray(data)
+      this.cache = new NdArray(data, { dtype: this.dtype })
   }
 
   static async fromOp(op: OpTrait, ...inputs: MaybePromise<Tensor>[]) {
@@ -88,7 +92,7 @@ export class Tensor {
         throw new Error('data is null')
       if (data instanceof NdArray)
         this.cache = data as any
-      else this.cache = toNdArray(data as any)
+      else this.cache = new NdArray(data as any)
       return this
     }
     return this
@@ -98,7 +102,7 @@ export class Tensor {
     return this.detach()
   }
 
-  get raw(): Promise<NdArray | null> {
+  get raw(): Promise< NdArray<Type> | null> {
     return this.realize().then(d => d.cache)
   }
 
@@ -115,14 +119,14 @@ export class Tensor {
     const raw = await this.raw
     if (!raw)
       throw new TensorValueIsNullError()
-    return new Tensor(await raw.permute(new Uint32Array(order)))
+    return new Tensor(await raw.permute(order))
   }
 
-  async reshape(size: ArrayLike<number>) {
+  async reshape(size: number[]) {
     const raw = await this.raw
     if (!raw)
       throw new TensorValueIsNullError()
-    return new Tensor(await raw.reshape(new Int32Array(size)), {
+    return new Tensor(await raw.reshape(size), {
       requiresGrad: this.requiresGrad,
     })
   }
@@ -142,7 +146,7 @@ export class Tensor {
     return this.raw.then((v) => {
       if (v instanceof NdArray)
         return v.shape
-      return new Uint32Array([ 1 ])
+      return [ 1 ]
     })
   }
 
@@ -159,17 +163,6 @@ export class Tensor {
     throw new Error(`${v} cannot be summed`)
   }
 
-  // async sum(dim?: number) {
-  //   const v = await this.raw
-  //   if (v instanceof NdArray) {
-  //     const data = v.value as number[]
-  //     return dim === undefined
-  //       ? _sum(data as number[])
-  //       : _sum(data as number[], dim)
-  //   }
-  //   throw new Error(`${v} cannot be summed`)
-  // }
-
   async argmax() {
     const value = await this.raw
     return value?.argmax()
@@ -184,8 +177,8 @@ export function transpose(t: MaybePromise<Tensor>) {
   return Promise.resolve(t).then(d => d.T)
 }
 
-export function ones(size: number[] | Uint32Array) {
-  return new Tensor(NdArray.ones(new Uint32Array(size)))
+export function ones(size: number[]) {
+  return new Tensor(NdArray.ones(size))
 }
 
 export async function onesLike(t: MaybePromise<Tensor>) {
@@ -194,8 +187,8 @@ export async function onesLike(t: MaybePromise<Tensor>) {
   return ones(shape)
 }
 
-export function zeros(size: number[] | Uint32Array) {
-  return new Tensor(NdArray.zeros(new Uint32Array(size)))
+export function zeros(size: number[]) {
+  return new Tensor(NdArray.zeros(size))
 }
 
 export async function zerosLike(t: MaybePromise<Tensor>) {
@@ -207,42 +200,18 @@ export async function zerosLike(t: MaybePromise<Tensor>) {
 // export function random(size: number[], max: number): Tensor
 // export function random(size: number[], min: number, max: number): Tensor
 // export function random(size, min?: number, max?: number)
-export function random(size: number[] | Uint32Array): Tensor {
+export function random(size: number[]): Tensor {
   // if (min === undefined)
   //   return new Tensor(_random(size))
   // else if (max === undefined)
   //   return new Tensor(_random(size, min))
   // else
-  return new Tensor(NdArray.rand(new Uint32Array(size)))
+  return new Tensor(NdArray.random((size)))
 }
 
 export function normal(size: number[], mean = 0, std = 0.01) {
-  return new Tensor(NdArray.normal(new Uint32Array(size), mean, std))
+  return new Tensor(NdArray.normal(size, { mean, std }))
 }
-
-// export function randomLike(t: MaybePromise<Tensor>): Promise<Tensor>
-// export function randomLike(
-//   t: MaybePromise<Tensor>,
-//   max: number,
-// ): Promise<Tensor>
-// export function randomLike(
-//   t: MaybePromise<Tensor>,
-//   min: number,
-//   max: number,
-// ): Promise<Tensor>
-// export async function randomLike(
-//   t: MaybePromise<Tensor>,
-//   min?: number,
-//   max?: number,
-// ) {
-//   t = await t
-//   const shape = await t.shape
-//   if (min === undefined)
-//     return random(shape)
-//   else if (max === undefined)
-//     return random(shape, min)
-//   else return random(shape, min, max)
-// }
 
 export async function computeGradient(outNode: Tensor, outGrad: Tensor) {
   const node2Grad = new WeakMap([ [ outNode, [ outGrad ] ] ])
